@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Peshraft Library",
+    "slug": "peshraft-library",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/peshraft-library/android/app-img.png",
+    "scheme": "peshraftlibrary",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/peshraft-library/android/app-img.png",
+        "backgroundImage": "./assets/peshraft-library/android/app-img.png",
+        "monochromeImage": "./assets/peshraft-library/android/app-img.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.olim_yuldoshev_ooo3.peshraftlibrary"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/peshraft-library/android/app-img.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/peshraft-library/android/app-img.png",
+          "imageWidth": 200,
+          "resizeMode": "cover",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "82d913d6-cb4e-4025-bd86-b55c54164afd"
+      }
+    },
+    "owner": "olim_yuldoshev_ooo3"
+  }
+}

@@ -1,0 +1,328 @@
+{
+  "navigators": {
+    "t1": "Home",
+    "t2": "Book",
+    "t3": "Favorite",
+    "t4": "Profile"
+  },
+
+  "home": {
+    "t1": "Peshraft Library",
+    "t2": "Search",
+    "t3": "Received books",
+    "t4": "day left",
+    "t5": "days left",
+    "t6": "All books",
+    "t7": "reader",
+    "t8": "readers"
+  },
+  "notifications": {
+    "t1": "Notifications",
+    "t2": "Duetime",
+    "t3": "News",
+    "t4": "Yesterday",
+    "t5": "Today"
+  },
+  "modalSearchHome": {
+    "t1": "Search Here",
+    "t2": "Books",
+    "t3": "See all",
+    "t4": "Recent Searches",
+    "t5": "Delete History"
+  },
+  "receivedBook": {
+    "t1": "Hello",
+    "t2": "Do you really want to return the book?",
+    "t3": "When you reject a book, do you return it to the library?",
+    "t4": "day left",
+    "t5": "days left",
+    "t6": "Return the book",
+    "t7": "You may like this"
+  },
+  "book": {
+    "t1": "page",
+    "t2": "pages",
+    "t3": "About",
+    "t4": "Reviews",
+    "t5": "Receive a book"
+  },
+  "aboutBook": {
+    "t1": "You may like this"
+  },
+  "reviewBook": {
+    "t1": "Reviews",
+    "t2": "Add review",
+    "t3": "Search",
+    "t4": "day ago",
+    "t5": "days ago"
+  },
+  "modalAddReview": {
+    "t1": "Add Review",
+    "t2": "Your Overall Rating Of The Book",
+    "t3": "Add Detailed Review",
+    "t4": "Enter your review",
+    "t5": "Submit"
+  },
+  "modalReceivingBook": {
+    "t1": "Receive Book",
+    "t2": "Full name",
+    "t3": "Enter full name",
+    "t4": "Job Title",
+    "t5": "Enter job title",
+    "t6": "Book name",
+    "t7": "Enter book name",
+    "t8": "Author",
+    "t9": "Enter author name",
+    "t10": "Receiving date",
+    "t11": "DD.MM.YYYY",
+    "t12": "Returning date",
+    "t13": "DD.MM.YYYY",
+    "t14": "Submit",
+
+    "t15": "Full name is required",
+    "t16": "Full name must be at least 3 characters",
+    "t17": "Full name must not exceed 50 characters",
+    "t18": "Full name can only contain letters, spaces, hyphens and apostrophes",
+
+    "t19": "Job title is required",
+    "t20": "Job title must be at least 2 characters",
+    "t21": "Job title must not exceed 50 characters",
+
+    "t22": "Book name is required",
+    "t23": "Book name must be at least 1 character",
+    "t24": "Book name must not exceed 100 characters",
+
+    "t25": "Author name is required",
+    "t26": "Author name must be at least 3 characters",
+    "t27": "Author name must not exceed 50 characters",
+
+    "t28": "Receiving date is required",
+    "t29": "Date must be in format DD.MM.YYYY",
+    "t30": "Invalid date or date cannot be in the past",
+
+    "t31": "Returning date is required",
+    "t32": "Returning date must be after receiving date",
+    "t33": "Success",
+    "t34": "Your request has been submitted successfully! The specialist will contact you soon.",
+    "t35": "Error",
+    "t36": "Please enter all fields"
+  },
+  "bookshelf": {
+    "t1": "My Bookshelf",
+    "t2": "Search Here",
+    "t3": "day left",
+    "t4": "days left",
+    "t5": "Return the book"
+  },
+  "favoriteBooks": {
+    "t1": "My favorite books",
+    "t2": "reader",
+    "t3": "readers"
+  },
+  "profile": {
+    "t1": "My Profile",
+    "t2": "Edit Profile",
+    "t3": "General",
+    "t4": "History",
+    "t5": "Feedback",
+    "t6": "Appearance",
+    "t7": "Language",
+    "t8": "Update app",
+    "t9": "Logout"
+  },
+  "logoutModal": {
+    "t1": "Logout",
+    "t2": "Are you sure you want to logout from your account?",
+    "t3": "Cancel",
+    "t4": "Logout"
+  },
+  "editProfile": {
+    "t1": "Edit User",
+    "t2": "Change Profile Picture",
+    "t3": "Full Name",
+    "t4": "Enter your full name",
+    "t5": "Date of birth",
+    "t6": "DD-MM-YYYY",
+    "t7": "Job Title",
+    "t8": "Enter your job title",
+    "t9": "Phone Number",
+    "t10": "Enter your phone number",
+    "t11": "Email",
+    "t12": "example@email.com",
+    "t13": "Password",
+    "t14": "Leave empty to keep current password",
+    "t15": "Confirm Password",
+    "t16": "Re-enter new password",
+    "t17": "Save Changes",
+
+    "t18": "Password must be at least 8 characters long",
+    "t19": "Password must not exceed 128 characters",
+    "t20": "Must contain at least one uppercase letter",
+    "t21": "Must contain at least one lowercase letter",
+    "t22": "Must contain at least one number",
+    "t23": "Must contain at least one special character",
+    "t24": "Contains common sequential pattern",
+    "t25": "Too many repeated characters",
+    "t26": "Password is too predictable",
+    "t27": "Contains common dictionary word",
+
+    "t28": "Full Name is required",
+    "t29": "Full Name must be at least 3 characters",
+    "t30": "Full Name must be at most 50 characters",
+    "t31": "Full Name can only contain letters, spaces, and basic punctuation",
+
+    "t32": "Date of Birth is required",
+    "t33": "Invalid date format (DD-MM-YYYY)",
+    "t34": "You must be at least 13 years old",
+
+    "t35": "Job Title must not exceed 100 characters",
+    "t36": "Job Title contains invalid characters",
+
+    "t37": "Phone number is required",
+    "t38": "Invalid phone number",
+
+    "t39": "Email is required",
+    "t40": "Invalid email format",
+    "t41": "Email must not exceed 254 characters",
+    "t42": "Please use a valid email domain",
+
+    "t43": "Password must be at least 8 characters",
+    "t44": "Password must not exceed 128 characters",
+    "t45": "Password is not strong enough",
+    "t46": "Password does not meet security requirements",
+
+    "t47": "Passwords must match",
+
+    "t48": "Error parsing phone number",
+    "t49": "Invalid Tajik mobile prefix",
+    "t50": "Please enter a valid phone number",
+
+    "t51": "Minimum 8 characters required",
+    "t52": "Include multiple character types",
+    "t53": "Add uppercase letters",
+    "t54": "Add lowercase letters",
+    "t55": "Add numbers",
+    "t56": "Add special characters",
+    "t57": "Avoid common patterns",
+    "t58": "Increase complexity",
+
+    "t59": "Success",
+    "t60": "Profile updated successfully!",
+    "t61": "Connection Error",
+    "t62": "Unable to connect to server. Please check your internet connection and try again.",
+
+    "t63": "Permission Required",
+    "t64": "Sorry, we need camera roll permissions to change your profile picture!",
+    "t65": "Invalid File Type",
+    "t66": "Please select only JPG or PNG images.",
+    "t67": "File Too Large",
+    "t68": "Please select an image smaller than 10MB.",
+    "t69": "Success",
+    "t70": "Profile picture updated successfully!",
+    "t71": "Error picking image",
+    "t72": "Error",
+    "t73": "Failed to select image. Please try again.",
+
+    "t74": "Permission Required",
+    "t75": "Sorry, we need camera permissions to take a photo!",
+    "t76": "Error taking photo:",
+    "t77": "Error",
+    "t78": "Failed to take photo. Please try again.",
+
+    "t79": "Change Profile Picture",
+    "t80": "Choose an option",
+    "t81": "Choose from Gallery",
+    "t82": "Take a Photo",
+    "t83": "Cancel",
+    "t84": "Remove Profile Picture",
+    "t85": "Are you sure you want to remove your profile picture",
+    "t86": "Remove",
+    "t87": "Profile picture removed!",
+
+    "t88": "Error",
+    "t89": "Failed to load image",
+    "t90": "Remove",
+
+    "t91": "Select Country",
+    "t92": "Search countries...",
+    "t93": "Operator",
+    "t94": "Start with +992. Supported prefixes: 90, 91, 92, 93, 94, 98, 99, etc.",
+    "t95": "Start with + or select country",
+
+    "t96": "Strength",
+    "t97": "Strong",
+    "t98": "Good",
+    "t99": "Fair",
+    "t100": "Weak",
+    "t101": "Requirements",
+    "t102": "At least 8 characters",
+    "t103": "One uppercase letter",
+    "t104": "One lowercase letter",
+    "t105": "One number",
+    "t106": "One special character",
+    "t107": "Tips to improve",
+    "t108": "Passwords match"
+  },
+  "historyBook": {
+    "t1": "History",
+    "t2": "reader",
+    "t3": "readers"
+  },
+  "feedback": {
+    "t1": "Feedback",
+    "t2": "Number Phone",
+    "t3": "Enter your phone number",
+    "t4": "Email",
+    "t5": "example@gmail.com",
+    "t6": "Add Detailed Review",
+    "t7": "Enter your review (minimum 20 characters)",
+    "t8": "Submit",
+
+    "t9": "Phone number is required",
+    "t10": "Invalid phone number",
+    "t11": "Invalid Tajik mobile operator prefix",
+    "t12": "Phone number must be at least 8 digits",
+
+    "t13": "Email is required",
+    "t14": "Invalid email format",
+    "t15": "Email must not exceed 254 characters",
+    "t16": "Please enter a valid email address",
+    "t17": "Please use a valid email domain",
+
+    "t18": "Review is required",
+    "t19": "Review must be at least 20 characters",
+    "t20": "Review must not exceed 1000 characters",
+    "t21": "Review contains too many capital letters",
+    "t22": "Review contains too many consecutive spaces",
+    "t23": "Review contains too many repeated punctuation marks",
+    "t24": "Review contains invalid characters",
+
+    "t25": "Error parsing phone number",
+
+    "t26": "Invalid Tajik mobile prefix",
+    "t27": "Please enter a valid phone number",
+
+    "t28": "Thank You",
+    "t29": "Your feedback has been submitted successfully",
+    "t30": "Connection Error",
+    "t31": "Unable to submit feedback. Please check your internet connection and try again",
+    "t32": "Submission error",
+
+    "t33": "Select Country",
+    "t34": "Search countries",
+    "t35": "Operator",
+    "t36": "Start with +992. Supported prefixes: 90, 91, 92, 93, 94, 98, 99, etc.",
+    "t37": "Start with + or select country",
+
+    "t38": "characters",
+    "t39": "more characters needed",
+    "t40": ""
+  },
+  "language": {
+    "selectLang": "Select language",
+    "langChanged": "Language changed to English",
+    "en": "English",
+    "ru": "Russian",
+    "tj": "Tajik"
+  }
+}
