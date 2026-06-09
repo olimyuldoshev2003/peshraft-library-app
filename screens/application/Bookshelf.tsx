@@ -26,41 +26,146 @@ const Bookshelf = () => {
   const [loading, setLoading] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
 
+  // Helper function to parse "DD.MM.YYYY" format
+  const parseDateFromDDMMYYYY = (dateStr: string): Date | null => {
+    if (!dateStr || typeof dateStr !== "string") return null;
+
+    const parts = dateStr.split(".");
+    if (parts.length === 3) {
+      const [day, month, year] = parts.map(Number);
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+      const date = new Date(year, month - 1, day);
+      if (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      ) {
+        return date;
+      }
+    }
+    return null;
+  };
+
+  // Calculate days left from due date
+  const calculateDaysLeft = (dueDateStr: any): number | null => {
+    if (!dueDateStr) return null;
+
+    let dueDate: Date | null = null;
+
+    // Check if it's a Date object
+    if (dueDateStr instanceof Date) {
+      dueDate = dueDateStr;
+    }
+    // Check if it's a Firestore Timestamp
+    else if (dueDateStr?.toDate && typeof dueDateStr.toDate === "function") {
+      dueDate = dueDateStr.toDate();
+    }
+    // Check if it's a timestamp with seconds
+    else if (dueDateStr?.seconds) {
+      dueDate = new Date(dueDateStr.seconds * 1000);
+    }
+    // Check if it's a string in DD.MM.YYYY format
+    else if (typeof dueDateStr === "string") {
+      dueDate = parseDateFromDDMMYYYY(dueDateStr);
+
+      // If that fails, try standard Date parsing
+      if (!dueDate) {
+        const standardDate = new Date(dueDateStr);
+        if (!isNaN(standardDate.getTime())) {
+          dueDate = standardDate;
+        }
+      }
+    }
+
+    if (!dueDate || isNaN(dueDate.getTime())) return null;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diffTime = dueDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  };
+
+  // Get days left text with proper formatting
+  const getDaysLeftText = (dueDate: string): string => {
+    const daysLeft = calculateDaysLeft(dueDate);
+
+    if (daysLeft === null) {
+      return dueDate || "-";
+    }
+
+    if (daysLeft < 0) {
+      return `Overdue by ${Math.abs(daysLeft)} days`;
+    }
+
+    if (daysLeft === 0) {
+      return "Due today";
+    }
+
+    return `${daysLeft} days left`;
+  };
+
   async function loadData() {
     if (!currentUser) return;
     setLoading(true);
     getUserBookshelf(currentUser.uid)
       .then(async (borrows: any[]) => {
-        const withImages = await Promise.all(
+        const withImagesAndDays = await Promise.all(
           borrows.map(async (borrow: any) => {
+            let image_url = null;
             if (borrow.bookId) {
-              const book = await getBookById(borrow.bookId).catch(() => null) as any;
-              return { ...borrow, image_url: book?.image_url || null };
+              const book = (await getBookById(borrow.bookId).catch(
+                () => null,
+              )) as any;
+              image_url = book?.image_url || null;
             }
-            return borrow;
-          })
+
+            // Calculate days left
+            const daysLeft = calculateDaysLeft(borrow.dueDate);
+
+            return {
+              ...borrow,
+              image_url,
+              daysLeft,
+            };
+          }),
         );
-        setReceivedBooksData(withImages);
+        setReceivedBooksData(withImagesAndDays);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }
 
   React.useEffect(() => {
-    if (currentUser) { loadData(); }
+    if (currentUser) {
+      loadData();
+    }
   }, [currentUser]);
 
-
-
   const navigation: any = useNavigation();
-  const {t} = useTranslation()
+  const { t } = useTranslation();
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    try { await loadData() } catch (e) {}
+    try {
+      await loadData();
+    } catch (e) {}
     setRefreshing(false);
   }, [currentUser]);
 
+  if (loading && receivedBooksData.length === 0) {
+    return (
+      <View
+        style={[
+          styles.bookshelfComponent,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#00A9FF" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.bookshelfComponent}>
@@ -68,9 +173,14 @@ const Bookshelf = () => {
         <View style={styles.headerBookshelfComponent}>
           <View style={styles.titleAndIconNotifications}>
             <Text style={styles.titleOfComponent}>{t("bookshelf.t1")}</Text>
-            <MaterialIcons name="notifications-none" size={35} color="black" onPress={() => {
-              navigation.navigate("Duetime")
-            }}/>
+            <MaterialIcons
+              name="notifications-none"
+              size={35}
+              color="black"
+              onPress={() => {
+                navigation.navigate("Duetime");
+              }}
+            />
           </View>
           <View style={styles.searchBlock}>
             <Ionicons
@@ -86,69 +196,95 @@ const Bookshelf = () => {
             />
           </View>
         </View>
-        {/* <View style={styles.sectionBookshelfComponent}> */}
-          <ScrollView
-refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#00A9FF"]} />}
-                        contentContainerStyle={styles.bookshelfReceivedBooksScrollView}
-            style={styles.bookshelfReceivedBooks}
-            showsVerticalScrollIndicator={false}
-          >
-            {receivedBooksData.map((receivedBook) => {
-              return (
-                <Pressable
-                  onPress={() => {
-                    navigation.navigate("ReceivedBook", { borrowData: receivedBook })
-                  }}
-                  style={styles.receivedBookContainer}
-                  key={receivedBook.id}
-                >
-                  <View style={styles.receivedBookContainerBlock1}>
-                    <Image
-                      style={styles.receivedBookImg}
-                      source={receivedBook.image_url ? { uri: receivedBook.image_url } : require("../../assets/peshraft-library/home/tojikon.jpg")}
-                    />
-                  </View>
-                  <View style={styles.receivedBookContainerBlock2}>
-                    <View style={styles.nameAuthorOfBookAndHeartIcon}>
-                      <View style={styles.nameAndAuthorOfBook}>
-                        <Text style={styles.nameOfBook}>
-                          {receivedBook.bookTitle || receivedBook.name || ""}
-                        </Text>
-                        <Text style={styles.authorOfBook}>
-                          {receivedBook.author}
-                        </Text>
-                      </View>
-                      <FontAwesome
-                        name="heart-o"
-                        size={20}
-                        color="#939393"
-                        style={styles.heartIcon}
-                      />
-                    </View>
-                    <View style={styles.alertIconAndDaysLeftBlock}>
-                      <Feather
-                        name="alert-octagon"
-                        size={24}
-                        color="#FF383C"
-                        style={styles.alertIcon}
-                      />
-                      <Text style={styles.daysLeft}>
-                        {receivedBook.dueDate || "-"}
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#00A9FF"]}
+            />
+          }
+          contentContainerStyle={styles.bookshelfReceivedBooksScrollView}
+          style={styles.bookshelfReceivedBooks}
+          showsVerticalScrollIndicator={false}
+        >
+          {receivedBooksData.length === 0 && !loading && (
+            <View style={{ paddingVertical: 40, alignItems: "center" }}>
+              <Text style={{ color: "#939393", fontSize: 16 }}>
+                No borrowed books
+              </Text>
+            </View>
+          )}
+          {receivedBooksData.map((receivedBook) => {
+            const isOverdue =
+              receivedBook.daysLeft !== null && receivedBook.daysLeft < 0;
+            const daysLeftText = getDaysLeftText(receivedBook.dueDate);
+
+            return (
+              <Pressable
+                onPress={() => {
+                  navigation.navigate("ReceivedBook", {
+                    borrowData: receivedBook,
+                  });
+                }}
+                style={styles.receivedBookContainer}
+                key={receivedBook.id}
+              >
+                <View style={styles.receivedBookContainerBlock1}>
+                  <Image
+                    style={styles.receivedBookImg}
+                    source={
+                      receivedBook.image_url
+                        ? { uri: receivedBook.image_url }
+                        : require("../../assets/peshraft-library/home/tojikon.jpg")
+                    }
+                  />
+                </View>
+                <View style={styles.receivedBookContainerBlock2}>
+                  <View style={styles.nameAuthorOfBookAndHeartIcon}>
+                    <View style={styles.nameAndAuthorOfBook}>
+                      <Text style={styles.nameOfBook}>
+                        {receivedBook.bookTitle || receivedBook.name || ""}
+                      </Text>
+                      <Text style={styles.authorOfBook}>
+                        {receivedBook.author}
                       </Text>
                     </View>
-                    <View style={styles.btnReturnBookBlock}>
-                      <View style={styles.btnReturnBook}>
-                        <Text style={styles.btnTextReturnBook}>
-                          {t("bookshelf.t5")}
-                        </Text>
-                      </View>
+                    <FontAwesome
+                      name="heart-o"
+                      size={20}
+                      color="#939393"
+                      style={styles.heartIcon}
+                    />
+                  </View>
+                  <View style={styles.alertIconAndDaysLeftBlock}>
+                    <Feather
+                      name="alert-octagon"
+                      size={24}
+                      color={isOverdue ? "#FF383C" : "#00A9FF"}
+                      style={styles.alertIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.daysLeft,
+                        { color: isOverdue ? "#FF383C" : "#00A9FF" },
+                      ]}
+                    >
+                      {daysLeftText}
+                    </Text>
+                  </View>
+                  <View style={styles.btnReturnBookBlock}>
+                    <View style={styles.btnReturnBook}>
+                      <Text style={styles.btnTextReturnBook}>
+                        {t("bookshelf.t5")}
+                      </Text>
                     </View>
                   </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        {/* </View> */}
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </View>
     </View>
   );
@@ -164,6 +300,7 @@ const styles = StyleSheet.create({
   bookshelfComponentBlock: {
     padding: 10,
     paddingTop: 25,
+    flex: 1,
   },
   headerBookshelfComponent: {
     paddingBottom: 15,
@@ -207,12 +344,11 @@ const styles = StyleSheet.create({
     gap: 22,
     paddingBottom: 120,
   },
-  bookshelfReceivedBooks: { 
+  bookshelfReceivedBooks: {
     paddingHorizontal: 5,
     paddingVertical: 10,
   },
 
-  // Styles with the same names and properties
   receivedBookContainer: {
     flexDirection: "row",
     shadowColor: "#000",
@@ -239,14 +375,16 @@ const styles = StyleSheet.create({
   },
   receivedBookContainerBlock2: {
     padding: 10,
+    flex: 1,
   },
   nameAuthorOfBookAndHeartIcon: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "80%",
+    width: "100%",
   },
   nameAndAuthorOfBook: {
     justifyContent: "space-between",
+    flex: 1,
   },
   nameOfBook: {
     fontSize: 22,
@@ -257,7 +395,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "400",
   },
-  heartIcon: {},
+  heartIcon: {
+    marginLeft: 10,
+  },
   alertIconAndDaysLeftBlock: {
     flexDirection: "row",
     alignItems: "center",
@@ -266,18 +406,16 @@ const styles = StyleSheet.create({
   },
   alertIcon: {},
   daysLeft: {
-    color: "#FF383C",
     fontSize: 12,
     fontWeight: "600",
   },
   btnReturnBookBlock: {
     flexDirection: "row",
-    width: "80%",
+    width: "100%",
     justifyContent: "flex-end",
     marginTop: 10,
   },
   btnReturnBook: {
-    // backgroundColor: "#FF383C",
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,

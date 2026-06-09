@@ -237,7 +237,7 @@ const Home = () => {
         book.daysLeft === null
           ? book.dueDate || "-"
           : isOverdue
-            ? t("home.overdue") || "Overdue!"
+            ? "Overdue!"
             : book.daysLeft === 1
               ? `1 ${t("home.t4")}`
               : `${book.daysLeft} ${t("home.t5")}`;
@@ -269,33 +269,24 @@ const Home = () => {
               {book.author || ""}
             </Text>
 
-            <View style={styles.receivedBookLeftDaysWithRangeFullDaysBlock}>
-              <View
-                style={[
-                  styles.receivedBookLeftDaysWithRangeLeftDaysBlock,
-                  { width: `${progressPct}%`, backgroundColor: barColor },
-                ]}
-              />
+            <View style={styles.receivedBookLeftDaysWithRangeAndText}>
+              <View style={styles.receivedBookLeftDaysWithRangeFullDaysBlock}>
+                <View
+                  style={[
+                    styles.receivedBookLeftDaysWithRangeLeftDaysBlock,
+                    {
+                      width: `${progressPct}%`,
+                      backgroundColor: barColor,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.receivedBookLeftDays}>{daysLabel}</Text>
             </View>
 
-            <View
-              style={[
-                styles.receivedBookDaysBadge,
-                { backgroundColor: isOverdue ? "#FFF0F0" : "#EAF7FF" },
-              ]}
-            >
-              <Feather
-                name="clock"
-                size={11}
-                color={isOverdue ? "#FF383C" : "#00A9FF"}
-              />
-              <Text
-                style={[
-                  styles.receivedBookDaysBadgeText,
-                  { color: isOverdue ? "#FF383C" : "#00A9FF" },
-                ]}
-              >
-                {daysLabel}
+            <View style={styles.receivedBookStatus}>
+              <Text style={styles.receivedBookStatusText}>
+                {isOverdue ? "Overdue" : "Active"}
               </Text>
             </View>
           </View>
@@ -379,49 +370,6 @@ const Home = () => {
     [navigation, t],
   );
 
-  // Render loading skeleton for books
-  const renderBookSkeleton = () => {
-    return (
-      <>
-        {[1, 2, 3, 4].map((item) => (
-          <View key={item} style={styles.bookContainer}>
-            <View
-              style={[
-                styles.bookContainerBlock1,
-                {
-                  backgroundColor: "#F0F0F0",
-                  justifyContent: "center",
-                  alignItems: "center",
-                },
-              ]}
-            >
-              <ActivityIndicator size="small" color="#00A9FF" />
-            </View>
-            <View style={styles.bookContainerBlock2}>
-              <View
-                style={{
-                  width: "80%",
-                  height: 16,
-                  backgroundColor: "#F0F0F0",
-                  borderRadius: 4,
-                  marginBottom: 8,
-                }}
-              />
-              <View
-                style={{
-                  width: "60%",
-                  height: 12,
-                  backgroundColor: "#F0F0F0",
-                  borderRadius: 4,
-                }}
-              />
-            </View>
-          </View>
-        ))}
-      </>
-    );
-  };
-
   return (
     <View style={styles.homeComponent}>
       <View style={styles.homeComponentBlock}>
@@ -459,8 +407,6 @@ const Home = () => {
                 value={searchValue}
                 onChangeText={setSearchValue}
                 placeholderTextColor={"#939393"}
-                editable={false}
-                pointerEvents="none"
               />
             </Pressable>
           </View>
@@ -532,28 +478,37 @@ const Home = () => {
           <View style={styles.receivedBooks}>
             <Text style={styles.receivedBookTitle}>{t("home.t3")}</Text>
             {receivedBooksLoading ? (
-              <View
-                style={{ flexDirection: "row", gap: 14, paddingHorizontal: 4 }}
+              <ScrollView
+                contentContainerStyle={styles.receivedBooksBlockScrollView}
+                style={styles.receivedBooksBlock}
+                horizontal
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
               >
-                {[1, 2].map((item) => (
-                  <View
-                    key={item}
-                    style={[
-                      styles.receivedBookContainer,
-                      { backgroundColor: "#F9F9F9" },
-                    ]}
-                  >
+                <View style={{ flexDirection: "row", gap: 14 }}>
+                  {[1, 2].map((item) => (
                     <View
+                      key={item}
                       style={[
-                        styles.receivedBookContainerBlock1,
-                        { justifyContent: "center", alignItems: "center" },
+                        styles.receivedBookContainer,
+                        { backgroundColor: "#F9F9F9" },
                       ]}
                     >
-                      <ActivityIndicator size="small" color="#00A9FF" />
+                      <View
+                        style={[
+                          styles.receivedBookContainerBlock1,
+                          {
+                            justifyContent: "center",
+                            alignItems: "center",
+                          },
+                        ]}
+                      >
+                        <ActivityIndicator size="small" color="#00A9FF" />
+                      </View>
                     </View>
-                  </View>
-                ))}
-              </View>
+                  ))}
+                </View>
+              </ScrollView>
             ) : receivedBooks.length === 0 ? (
               <View style={{ paddingVertical: 20, alignItems: "center" }}>
                 <Text style={{ color: "#939393", fontSize: 14 }}>
@@ -626,7 +581,9 @@ const Home = () => {
                   <Text style={styles.noBooksText}>Books not found</Text>
                 )}
 
-              {loadingBooks && renderBookSkeleton()}
+              {loadingBooks && (
+                <Text style={styles.loadingText}>Loading books...</Text>
+              )}
 
               {!loadingBooks && filteredBooks.map(renderBookItem)}
             </View>
@@ -756,84 +713,93 @@ const styles = StyleSheet.create({
   },
   receivedBookTitle: {
     fontSize: 21,
-    fontWeight: "600",
+    fontWeight: "500",
     color: "#000",
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    marginBottom: 15,
   },
   receivedBooksBlockScrollView: {
-    gap: 14,
-    paddingHorizontal: 4,
-    paddingVertical: 8,
-    paddingRight: 24,
+    gap: 15,
+    paddingRight: 440,
+    paddingVertical: 10,
   },
-  receivedBooksBlock: {
-    maxHeight: 260,
-  },
+  receivedBooksBlock: {},
+
   receivedBookContainer: {
-    width: 140,
+    width: 280,
+    height: 170,
     backgroundColor: "#fff",
-    borderRadius: 18,
+    borderRadius: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.13,
-    shadowRadius: 8,
-    elevation: 6,
-    overflow: "hidden",
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
+    flexDirection: "row",
   },
   receivedBookContainerBlock1: {
-    width: "100%",
-    height: 150,
+    width: "40%",
     backgroundColor: "#F5EABD",
     justifyContent: "center",
     alignItems: "center",
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
   },
   imgReceivedBook: {
-    width: "72%",
-    height: "90%",
+    width: "77%",
+    height: "77%",
     resizeMode: "contain",
   },
   receivedBookContainerBlock2: {
     padding: 10,
-    paddingTop: 9,
-    gap: 4,
+    width: "60%",
   },
   receivedBookTextBlock: {},
   receivedBookName: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    lineHeight: 16,
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#000",
   },
   receivedBookAuthor: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
-    color: "#999",
+    color: "#515151",
+  },
+  receivedBookLeftDaysWithRangeAndText: {
+    marginTop: 15,
   },
   receivedBookLeftDaysWithRangeFullDaysBlock: {
-    height: 5,
-    backgroundColor: "#EBEBEB",
-    borderRadius: 3,
-    marginTop: 6,
-    overflow: "hidden",
+    height: 10,
+    backgroundColor: "#D9D9D9",
+    borderRadius: 5,
   },
   receivedBookLeftDaysWithRangeLeftDaysBlock: {
-    height: 5,
-    borderRadius: 3,
+    height: 10,
+    backgroundColor: "#7EC7EC",
+    borderRadius: 5,
   },
-  receivedBookDaysBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  receivedBookLeftDays: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#515151",
+    marginTop: 4,
+    textAlign: "right",
+  },
+  receivedBookStatus: {
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     alignSelf: "flex-start",
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginTop: 6,
+    marginTop: 22,
+    borderWidth: 1,
+    borderColor: "#404066",
   },
-  receivedBookDaysBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
+  receivedBookStatusText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#404066",
   },
   allBooks: {
     marginTop: 30,

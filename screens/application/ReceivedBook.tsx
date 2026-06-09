@@ -4,40 +4,115 @@ import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator, Image, Pressable, ScrollView,
-  StyleSheet, Text, View,
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useAuth } from "@/context/AuthContext";
-import { getUserBookshelf, getAllBooks, getBookById } from "@/firebase/mobile.services";
+import {
+  getUserBookshelf,
+  getAllBooks,
+  getBookById,
+} from "@/firebase/mobile.services";
 
 const ReceivedBook = ({ route }: { route?: any }) => {
   const navigation: any = useNavigation();
   const { currentUser, userProfile } = useAuth();
   const { t, i18n } = useTranslation();
   const [borrowData, setBorrowData] = useState<any>(null);
-  const [bookImage, setBookImage] = useState<string | null>(null); // ✅ image from books collection
+  const [bookImage, setBookImage] = useState<string | null>(null);
   const [otherBooks, setOtherBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ FIXED: Bookshelf now passes the full borrowData object directly
   const passedBorrowData = route?.params?.borrowData;
   const borrowId = route?.params?.borrowId;
 
+  // Helper function to parse "DD.MM.YYYY" format
+  const parseDateFromDDMMYYYY = (dateStr: string): Date | null => {
+    if (!dateStr || typeof dateStr !== "string") return null;
+
+    // Check if format is DD.MM.YYYY
+    const parts = dateStr.split(".");
+    if (parts.length === 3) {
+      const [day, month, year] = parts.map(Number);
+      // Validate numbers
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+      // Create date (month is 0-indexed in JavaScript)
+      const date = new Date(year, month - 1, day);
+      // Validate if date is valid
+      if (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      ) {
+        return date;
+      }
+    }
+    return null;
+  };
+
+  // Calculate days left from due date
+  const calculateDaysLeft = (dueDateStr: any): number | null => {
+    if (!dueDateStr) return null;
+
+    // Try to parse the date
+    let dueDate: Date | null = null;
+
+    // Check if it's already a Date object
+    if (dueDateStr instanceof Date) {
+      dueDate = dueDateStr;
+    }
+    // Check if it's a Firestore Timestamp
+    else if (dueDateStr?.toDate && typeof dueDateStr.toDate === "function") {
+      dueDate = dueDateStr.toDate();
+    }
+    // Check if it's a timestamp with seconds
+    else if (dueDateStr?.seconds) {
+      dueDate = new Date(dueDateStr.seconds * 1000);
+    }
+    // Check if it's a string in DD.MM.YYYY format
+    else if (typeof dueDateStr === "string") {
+      dueDate = parseDateFromDDMMYYYY(dueDateStr);
+
+      // If that fails, try standard Date parsing
+      if (!dueDate) {
+        const standardDate = new Date(dueDateStr);
+        if (!isNaN(standardDate.getTime())) {
+          dueDate = standardDate;
+        }
+      }
+    }
+
+    if (!dueDate || isNaN(dueDate.getTime())) return null;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diffTime = dueDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  };
+
   useEffect(() => {
-    // If borrowData was passed directly from Bookshelf, use it immediately
     if (passedBorrowData) {
       setBorrowData(passedBorrowData);
-      // Fetch the real book image using bookId (borrow doc doesn't store image_url)
       if (passedBorrowData.bookId) {
         getBookById(passedBorrowData.bookId)
-          .then((book: any) => { if (book?.image_url) setBookImage(book.image_url); })
+          .then((book: any) => {
+            if (book?.image_url) setBookImage(book.image_url);
+          })
           .catch(console.error);
       }
-      // Still load other books for recommendations
-      getAllBooks().then((books: any[]) => setOtherBooks(books.slice(0, 6))).catch(console.error);
+      getAllBooks()
+        .then((books: any[]) => setOtherBooks(books.slice(0, 6)))
+        .catch(console.error);
       return;
     }
-    // Fallback: load from Firestore if no data was passed
+
     if (!currentUser) return;
     setLoading(true);
     async function load() {
@@ -54,13 +129,22 @@ const ReceivedBook = ({ route }: { route?: any }) => {
   }, [currentUser, borrowId, passedBorrowData]);
 
   const dynamicStyles = StyleSheet.create({
-    daysLeft: { fontSize: i18n.language === "ru" || i18n.language === "tj" ? 15 : 20 },
-    btnTextReturnTheBook: { fontSize: i18n.language === "ru" || i18n.language === "tj" ? 13 : 18 },
+    daysLeft: {
+      fontSize: i18n.language === "ru" || i18n.language === "tj" ? 15 : 20,
+    },
+    btnTextReturnTheBook: {
+      fontSize: i18n.language === "ru" || i18n.language === "tj" ? 13 : 18,
+    },
   });
 
   if (loading) {
     return (
-      <View style={[styles.receivedBookComponent, { justifyContent: "center", alignItems: "center" }]}>
+      <View
+        style={[
+          styles.receivedBookComponent,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
         <ActivityIndicator size="large" color="#00A9FF" />
       </View>
     );
@@ -72,10 +156,18 @@ const ReceivedBook = ({ route }: { route?: any }) => {
         <View style={styles.receivedBookComponentBlock}>
           <MaterialCommunityIcons
             name="arrow-left-thin-circle-outline"
-            size={45} color="black"
+            size={45}
+            color="black"
             onPress={() => navigation.goBack()}
           />
-          <Text style={{ textAlign: "center", color: "#999", marginTop: 40, fontSize: 18 }}>
+          <Text
+            style={{
+              textAlign: "center",
+              color: "#999",
+              marginTop: 40,
+              fontSize: 18,
+            }}
+          >
             No borrowed books yet
           </Text>
         </View>
@@ -83,10 +175,60 @@ const ReceivedBook = ({ route }: { route?: any }) => {
     );
   }
 
-  // Calculate days left
-  const dueDate = borrowData.dueDate ? new Date(borrowData.dueDate) : null;
-  const now = new Date();
-  const daysLeft = dueDate ? Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+  // Calculate days left using the helper function
+  const daysLeft = calculateDaysLeft(borrowData.dueDate);
+
+  // Get the formatted due date for display
+  const getFormattedDueDate = (): string => {
+    if (!borrowData.dueDate) return "-";
+
+    // If it's already a formatted string, return it
+    if (
+      typeof borrowData.dueDate === "string" &&
+      borrowData.dueDate.includes(".")
+    ) {
+      return borrowData.dueDate;
+    }
+
+    // Try to parse and format
+    let date: Date | null = null;
+
+    if (borrowData.dueDate?.toDate) {
+      date = borrowData.dueDate.toDate();
+    } else if (borrowData.dueDate?.seconds) {
+      date = new Date(borrowData.dueDate.seconds * 1000);
+    } else if (typeof borrowData.dueDate === "string") {
+      date = parseDateFromDDMMYYYY(borrowData.dueDate);
+      if (!date) date = new Date(borrowData.dueDate);
+    }
+
+    if (date && !isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    }
+
+    return String(borrowData.dueDate);
+  };
+
+  const getDaysLeftText = (): string => {
+    if (daysLeft === null) {
+      return getFormattedDueDate();
+    }
+
+    if (daysLeft < 0) {
+      return `${t("receivedBook.overdue") || "Overdue by"} ${Math.abs(daysLeft)} ${t("receivedBook.days") || "days"}`;
+    }
+
+    if (daysLeft === 0) {
+      return t("receivedBook.dueToday") || "Due today";
+    }
+
+    return `${daysLeft} ${t("receivedBook.t5")}`;
+  };
+
+  const isOverdue = daysLeft !== null && daysLeft < 0;
 
   return (
     <View style={styles.receivedBookComponent}>
@@ -94,7 +236,8 @@ const ReceivedBook = ({ route }: { route?: any }) => {
         <View style={styles.headerReceivedBookComponent}>
           <MaterialCommunityIcons
             name="arrow-left-thin-circle-outline"
-            size={45} color="black"
+            size={45}
+            color="black"
             onPress={() => navigation.goBack()}
           />
         </View>
@@ -109,34 +252,50 @@ const ReceivedBook = ({ route }: { route?: any }) => {
 
           <View style={styles.imgOfBookBlock}>
             <Image
-              source={bookImage
-                ? { uri: bookImage }
-                : require("../../assets/peshraft-library/home/tojikon.jpg")}
+              source={
+                bookImage
+                  ? { uri: bookImage }
+                  : require("../../assets/peshraft-library/home/tojikon.jpg")
+              }
               style={styles.imgOfBook}
             />
           </View>
 
           <View style={styles.blockForText}>
-            <Text style={styles.textNumber1}>{borrowData.bookTitle || "-"}</Text>
+            <Text style={styles.textNumber1}>
+              {borrowData.bookTitle || "-"}
+            </Text>
             <Text style={styles.textNumber2}>{borrowData.author || ""}</Text>
           </View>
 
           <View style={styles.daysLeftAndBtnReturnBlock}>
             <View style={styles.iconAndDaysLeftBlock}>
-              <Feather name="alert-octagon" size={40} color="#FF383C" style={styles.alertIcon} />
-              <Text style={[styles.daysLeft, dynamicStyles.daysLeft]}>
-                {daysLeft !== null
-                  ? daysLeft <= 0
-                    ? `Overdue by ${Math.abs(daysLeft)} days`
-                    : `${daysLeft} ${t("receivedBook.t5")}`
-                  : borrowData.dueDate || "-"}
+              <Feather
+                name="alert-octagon"
+                size={40}
+                color={isOverdue ? "#FF383C" : "#00A9FF"}
+                style={styles.alertIcon}
+              />
+              <Text
+                style={[
+                  styles.daysLeft,
+                  dynamicStyles.daysLeft,
+                  { color: isOverdue ? "#FF383C" : "#00A9FF" },
+                ]}
+              >
+                {getDaysLeftText()}
               </Text>
             </View>
             <Pressable
               style={styles.btnReturnTheBook}
               onPress={() => navigation.navigate("ReturnBook", { borrowData })}
             >
-              <Text style={[styles.btnTextReturnTheBook, dynamicStyles.btnTextReturnTheBook]}>
+              <Text
+                style={[
+                  styles.btnTextReturnTheBook,
+                  dynamicStyles.btnTextReturnTheBook,
+                ]}
+              >
                 {t("receivedBook.t6")}
               </Text>
             </Pressable>
@@ -159,9 +318,11 @@ const ReceivedBook = ({ route }: { route?: any }) => {
                     onPress={() => navigation.navigate("Book", { id: book.id })}
                   >
                     <Image
-                      source={book.image_url
-                        ? { uri: book.image_url }
-                        : require("../../assets/peshraft-library/home/tojikon.jpg")}
+                      source={
+                        book.image_url
+                          ? { uri: book.image_url }
+                          : require("../../assets/peshraft-library/home/tojikon.jpg")
+                      }
                       style={styles.otherBookImg}
                     />
                     <Text style={styles.otherBookName}>{book.title}</Text>
@@ -182,24 +343,53 @@ const styles = StyleSheet.create({
   receivedBookComponent: { flex: 1, backgroundColor: "#fff" },
   receivedBookComponentBlock: { padding: 18, paddingTop: 26 },
   headerReceivedBookComponent: {},
-  sectionReceivedBookComponentScrollView: { marginTop: 20, gap: 20, paddingBottom: 100 },
+  sectionReceivedBookComponentScrollView: {
+    marginTop: 20,
+    gap: 20,
+    paddingBottom: 100,
+  },
   sectionReceivedBookComponent: {},
   greetingsAndNameOfUser: { color: "#636363", fontSize: 25, fontWeight: "600" },
   imgOfBookBlock: { justifyContent: "center", alignItems: "center" },
   imgOfBook: {
-    width: 200, height: 300,
+    width: 200,
+    height: 300,
     transform: [{ rotate: "-10deg" }],
-    shadowColor: "#000", shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3, shadowRadius: 2, elevation: 5, backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 5,
+    backgroundColor: "#fff",
   },
   blockForText: {},
   textNumber1: { fontSize: 25, fontWeight: "500", textAlign: "center" },
-  textNumber2: { fontSize: 25, fontWeight: "400", textAlign: "center", color: "#939393" },
-  daysLeftAndBtnReturnBlock: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  iconAndDaysLeftBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
+  textNumber2: {
+    fontSize: 25,
+    fontWeight: "400",
+    textAlign: "center",
+    color: "#939393",
+  },
+  daysLeftAndBtnReturnBlock: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+  iconAndDaysLeftBlock: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
   alertIcon: {},
-  daysLeft: { color: "#FF383C", fontSize: 20, fontWeight: "400" },
-  btnReturnTheBook: { backgroundColor: "#00A9FF", paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  daysLeft: { fontSize: 20, fontWeight: "400" },
+  btnReturnTheBook: {
+    backgroundColor: "#00A9FF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
   btnTextReturnTheBook: { color: "#fff", fontSize: 18, fontWeight: "500" },
   otherBooksContainer: { marginTop: 10 },
   titleOtherBooks: { fontSize: 21, fontWeight: "500" },
