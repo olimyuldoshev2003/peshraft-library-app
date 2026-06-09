@@ -137,6 +137,9 @@ const Bookshelf = () => {
       .finally(() => setLoading(false));
   }
 
+  console.log(receivedBooksData);
+  
+
   React.useEffect(() => {
     if (currentUser) {
       loadData();
