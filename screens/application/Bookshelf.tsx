@@ -253,12 +253,6 @@ const Bookshelf = () => {
                         {receivedBook.author}
                       </Text>
                     </View>
-                    <FontAwesome
-                      name="heart-o"
-                      size={20}
-                      color="#939393"
-                      style={styles.heartIcon}
-                    />
                   </View>
                   <View style={styles.alertIconAndDaysLeftBlock}>
                     <Feather

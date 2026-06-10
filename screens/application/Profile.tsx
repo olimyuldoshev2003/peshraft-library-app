@@ -374,11 +374,11 @@ const styles = StyleSheet.create({
   },
   userFullnameEmailAndBtnEditBlock: {},
   userFullname: {
-    fontSize: 23,
+    fontSize: 21,
     fontWeight: "600",
   },
   userEmail: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "400",
     color: "#939393",
   },

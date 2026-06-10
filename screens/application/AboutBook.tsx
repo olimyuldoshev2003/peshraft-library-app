@@ -1,29 +1,73 @@
 import { useNavigation } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator, Image, Pressable, ScrollView,
-  StyleSheet, Text, View,
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { getAllBooks } from "@/firebase/mobile.services";
+import { useAppSelector } from "@/hooks/use-app-selector";
+import { useAppDispatch } from "@/hooks/use-app-dispatch";
+import { getBookById } from "@/api/api";
 
-const AboutBook = ({ route }: { route: any }) => {
+const AboutBook = ({
+  route,
+  bookId: propBookId,
+}: {
+  route?: any;
+  bookId?: string;
+}) => {
   const navigation: any = useNavigation();
   const { t } = useTranslation();
-  const [otherBooks, setOtherBooks] = useState<any[]>([]);
+  const dispatch = useAppDispatch();
+  const [otherBooks, setOtherBooks] = React.useState<any[]>([]);
 
-  // Get book data passed from Book.tsx
-  const book = route?.params?.book;
+  // Get bookId from route params or prop
+  const bookId = route?.params?.bookId || propBookId;
 
+  // Get book data from Redux
+  const bookById = useAppSelector(
+    (state: any) => state.peshraftLibraryState.bookById,
+  );
+  const loadingBookById = useAppSelector(
+    (state: any) => state.peshraftLibraryState.loadingBookById,
+  );
+
+
+  // Load other books for recommendations
   useEffect(() => {
-    getAllBooks()
-      .then((books: any[]) => {
-        // Exclude current book
-        const others = books.filter((b: any) => b.id !== book?.id).slice(0, 6);
-        setOtherBooks(others);
-      })
-      .catch(console.error);
-  }, []);
+    if (bookId) {
+      getAllBooks()
+        .then((books: any[]) => {
+          const others = books.filter((b: any) => b.id !== bookId).slice(0, 6);
+          setOtherBooks(others);
+        })
+        .catch(console.error);
+    }
+  }, [bookId]);
+
+  // Show loading
+  if (loadingBookById) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#00A9FF" />
+      </View>
+    );
+  }
+
+  // No book found
+  if (!bookById || bookById.id !== bookId) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ color: "#999" }}>No book found</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.aboutBookComponent}>
@@ -34,13 +78,19 @@ const AboutBook = ({ route }: { route: any }) => {
       >
         <View style={styles.aboutBookBlock}>
           <Text style={styles.aboutBook}>
-            {book?.description || "No description available."}
+            {bookById?.description || "No description available."}
           </Text>
-          {book && (
+          {bookById && (
             <View style={{ marginTop: 12, gap: 4 }}>
-              <Text style={styles.infoText}>📅 Year: {book.year || "-"}</Text>
-              <Text style={styles.infoText}>🌐 Language: {book.language || "-"}</Text>
-              <Text style={styles.infoText}>📚 Available copies: {book.available_copies ?? "-"}</Text>
+              <Text style={styles.infoText}>
+                📅 Year: {bookById.year || "-"}
+              </Text>
+              <Text style={styles.infoText}>
+                🌐 Language: {bookById.language || "-"}
+              </Text>
+              <Text style={styles.infoText}>
+                📚 Available copies: {bookById.available_copies ?? "-"}
+              </Text>
             </View>
           )}
         </View>
@@ -61,9 +111,11 @@ const AboutBook = ({ route }: { route: any }) => {
                   onPress={() => navigation.navigate("Book", { id: b.id })}
                 >
                   <Image
-                    source={b.image_url
-                      ? { uri: b.image_url }
-                      : require("../../assets/peshraft-library/home/tojikon.jpg")}
+                    source={
+                      b.image_url
+                        ? { uri: b.image_url }
+                        : require("../../assets/peshraft-library/home/tojikon.jpg")
+                    }
                     style={styles.otherBookImg}
                   />
                   <Text style={styles.otherBookName}>{b.title}</Text>
@@ -93,4 +145,10 @@ const styles = StyleSheet.create({
   otherBookImgAndName: { gap: 5 },
   otherBookImg: { width: 95, height: 145, borderRadius: 8 },
   otherBookName: { textAlign: "center", fontSize: 15, fontWeight: "400" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
 });

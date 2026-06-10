@@ -4,7 +4,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { Alert } from "react-native";
-import { addBookReview } from "@/firebase/mobile.services";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,6 +20,8 @@ import {
 
 // @ts-ignore
 import Stars from "react-native-stars";
+import { addBookReview } from "@/api/api";
+import { useAppDispatch } from "@/hooks/use-app-dispatch";
 
 const ModalAddReview = ({
   modalAddReview,
@@ -35,6 +36,8 @@ const ModalAddReview = ({
   book?: any;
   onReviewAdded?: () => void;
 }) => {
+  const dispatch = useAppDispatch();
+
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviewCategory, setReviewCategory] = useState("Interesting");
@@ -43,20 +46,24 @@ const ModalAddReview = ({
   const { t } = useTranslation();
 
   const handleSubmit = async () => {
-    if (rating === 0) return Alert.alert("Error", "Please select a star rating");
-    if (!reviewText.trim()) return Alert.alert("Error", "Please write your review");
+    if (rating === 0)
+      return Alert.alert("Error", "Please select a star rating");
+    if (!reviewText.trim())
+      return Alert.alert("Error", "Please write your review");
     if (!bookId || !currentUser) return Alert.alert("Error", "Please sign in");
     setSubmitting(true);
     try {
-      await addBookReview({
-        bookId,
-        uid: currentUser.uid,
-        userName: userProfile?.fullName || currentUser.email || "User",
-        member_image_url: userProfile?.member_image_url || "",
-        rating,
-        review: reviewText.trim(),
-        review_category: reviewCategory,
-      });
+      await dispatch(
+        addBookReview({
+          bookId,
+          uid: currentUser.uid,
+          userName: userProfile?.fullName || currentUser.email || "User",
+          member_image_url: userProfile?.member_image_url || "",
+          rating,
+          review: reviewText.trim(),
+          review_category: reviewCategory,
+        }),
+      );
       Alert.alert("Success", "Review added!");
       setReviewText("");
       setRating(0);
@@ -98,7 +105,9 @@ const ModalAddReview = ({
                 setModalAddReview(false);
               }}
             />
-            <Text style={styles.titleModalAddReviewComponent}>{t("modalAddReview.t1")}</Text>
+            <Text style={styles.titleModalAddReviewComponent}>
+              {t("modalAddReview.t1")}
+            </Text>
             <View></View>
           </View>
           <ScrollView
@@ -108,9 +117,11 @@ const ModalAddReview = ({
           >
             <View style={styles.imgNameAndAuthorOfThisBookAndBtnNovelBlock}>
               <Image
-                source={book?.image_url
-                  ? { uri: book.image_url }
-                  : require("../../assets/peshraft-library/home/tojikon.jpg")}
+                source={
+                  book?.image_url
+                    ? { uri: book.image_url }
+                    : require("../../assets/peshraft-library/home/tojikon.jpg")
+                }
                 style={styles.imgOfBook}
               />
               <View style={styles.nameAndAuthorOfBookAndBtnNovelBlock}>
@@ -123,9 +134,7 @@ const ModalAddReview = ({
             </View>
             <View style={styles.ratingAndLabelInpReviewBlock}>
               <View style={styles.ratingBlock}>
-                <Text style={styles.ratingTitle}>
-                  {t("modalAddReview.t2")}
-                </Text>
+                <Text style={styles.ratingTitle}>{t("modalAddReview.t2")}</Text>
                 {/* <Stars
                   default={rating}
                   count={5}
@@ -168,8 +177,14 @@ const ModalAddReview = ({
               </View>
             </View>
             <View style={styles.btnSubmitBlock}>
-              <Pressable style={styles.btnSubmit} onPress={handleSubmit} disabled={submitting}>
-                <Text style={styles.btnTextSubmit}>{submitting ? "Sending..." : t("modalAddReview.t5")}</Text>
+              <Pressable
+                style={styles.btnSubmit}
+                onPress={handleSubmit}
+                disabled={submitting}
+              >
+                <Text style={styles.btnTextSubmit}>
+                  {submitting ? "Sending..." : t("modalAddReview.t5")}
+                </Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -222,19 +237,19 @@ const styles = StyleSheet.create({
     gap: 30,
   },
   imgOfBook: {
-    width: 122,
-    height: 210,
+    width: 112,
+    height: 200,
     resizeMode: "contain",
   },
   nameAndAuthorOfBookAndBtnNovelBlock: {},
   nameOfBook: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "500",
     textAlign: "center",
   },
   authorOfBook: {
     color: "#515151",
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "400",
     textAlign: "center",
   },

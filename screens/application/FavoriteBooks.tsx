@@ -18,10 +18,14 @@ import {
 
 import { getFavoriteBooks, getAllBooks } from "@/firebase/mobile.services";
 import { useAuth } from "@/context/AuthContext";
+import { useAppSelector } from "@/hooks/use-app-selector";
 
 const FavoriteBooks = () => {
   const navigation: any = useNavigation();
   const { currentUser } = useAuth();
+
+  // const favoriteBooks = useAppSelector((state) => state.peshraftLibraryState)
+
   const [favoriteBooks, setFavoriteBooks] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
 

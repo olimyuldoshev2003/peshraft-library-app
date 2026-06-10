@@ -20,68 +20,77 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 // @ts-ignore
 import Stars from "react-native-stars";
 import { useTranslation } from "react-i18next";
-import { getBookReviews } from "@/firebase/mobile.services";
 import { useAuth } from "@/context/AuthContext";
+import { useAppSelector } from "@/hooks/use-app-selector";
+import { useAppDispatch } from "@/hooks/use-app-dispatch";
+import { getBookReviews } from "@/api/api";
 
 const ReviewBook = ({
-  route,
+  bookId,
   setModalAddReview,
 }: {
-  route: any;
+  bookId: string;
   setModalAddReview?: Dispatch<SetStateAction<boolean>>;
-  book?: any;
 }) => {
-  const filterButtons = [
-    { id: 1, title: "All", active: true },
-    { id: 2, title: "Interesting", active: false },
-    { id: 3, title: "Complain", active: false },
-    { id: 4, title: "Feedback", active: false },
-  ];
+  const dispatch = useAppDispatch();
+
+  console.log(bookId);
+  
+
+  const loadingReviewsOfBook = useAppSelector(
+    (state) => state.peshraftLibraryState.loadingReviewsOfBook,
+  );
+  const reviewsOfBook = useAppSelector(
+    (state) => state.peshraftLibraryState.reviewsOfBook,
+  );
 
   const [rating] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
   const { t } = useTranslation();
   const { currentUser } = useAuth();
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loadingReviews, setLoadingReviews] = useState(false);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchTempValue, setSearchTempValue] = useState("");
 
-  const bookId = route?.params?.id || route?.params?.bookId;
+
+  // Use reviews from Redux instead of local state
+  const reviews = reviewsOfBook || [];
 
   async function loadData() {
     if (!bookId) return;
-    setLoadingReviews(true);
-    getBookReviews(bookId)
-      .then(setReviews)
-      .catch(console.error)
-      .finally(() => setLoadingReviews(false));
+
+    await dispatch(getBookReviews(bookId)).unwrap();
   }
 
   useEffect(() => {
     loadData();
-  }, [bookId]);
+  }, [bookId, dispatch]);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
+
     try {
       await loadData();
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
+
     setRefreshing(false);
   }, [bookId]);
 
   // Filter reviews based on search value and active filter
-  const filteredReviews = reviews.filter((rev: any) => {
-    const matchesFilter =
-      activeFilter === "All" || rev.review_category === activeFilter;
-    const matchesSearch =
-      searchValue === "" ||
-      rev.review?.toLowerCase().includes(searchValue.toLowerCase()) ||
-      rev.userName?.toLowerCase().includes(searchValue.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const filteredReviews = Array.isArray(reviews)
+    ? reviews.filter((rev: any) => {
+        const matchesFilter =
+          activeFilter === "All" || rev.review_category === activeFilter;
+        const matchesSearch =
+          searchValue === "" ||
+          rev.review?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          rev.userName?.toLowerCase().includes(searchValue.toLowerCase());
+        return matchesFilter && matchesSearch;
+      })
+    : [];
 
   const handleOpenSearchModal = () => {
     setSearchTempValue(searchValue);
@@ -168,47 +177,16 @@ const ReviewBook = ({
               )}
             </Pressable>
 
-            <ScrollView
-              contentContainerStyle={styles.filterBtnsBlockScrollView}
-              style={styles.filterBtnsBlock}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            >
-              {filterButtons.map((filter) => (
-                <Pressable
-                  key={filter.id}
-                  onPress={() => setActiveFilter(filter.title)}
-                  style={[
-                    styles.filterBtn,
-                    activeFilter === filter.title
-                      ? styles.filterBtnActive
-                      : styles.filterBtnInactive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      activeFilter === filter.title
-                        ? styles.filterBtnTextActive
-                        : styles.filterBtnTextInactive,
-                    ]}
-                  >
-                    {filter.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
             <View style={styles.reviewsBlock}>
-              {loadingReviews && (
+              {loadingReviewsOfBook && (
                 <ActivityIndicator
                   size="large"
                   color="#00A9FF"
                   style={{ marginTop: 20 }}
                 />
               )}
-              {!loadingReviews &&
-                filteredReviews.length === 0 &&
+              {!loadingReviewsOfBook &&
+                reviewsOfBook.length === 0 &&
                 searchValue !== "" && (
                   <Text
                     style={{
@@ -221,8 +199,8 @@ const ReviewBook = ({
                     No reviews found for "{searchValue}"
                   </Text>
                 )}
-              {!loadingReviews &&
-                filteredReviews.length === 0 &&
+              {!loadingReviewsOfBook &&
+                reviewsOfBook.length === 0 &&
                 searchValue === "" && (
                   <Text
                     style={{
@@ -235,7 +213,7 @@ const ReviewBook = ({
                     No reviews yet. Be the first!
                   </Text>
                 )}
-              {filteredReviews.map((rev: any) => (
+              {reviewsOfBook.map((rev: any) => (
                 <View key={rev.id} style={styles.reviewBlock}>
                   <View style={styles.headerReviewBlock}>
                     <View style={styles.userImgFullnameAndRateBlock}>

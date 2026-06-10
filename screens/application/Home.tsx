@@ -27,9 +27,13 @@ import {
   Platform,
 } from "react-native";
 import { useTranslation } from "react-i18next";
+import { useAppSelector } from "@/hooks/use-app-selector";
 
 const Home = () => {
   const navigation: any = useNavigation();
+
+  
+
   const [modalSearch, setModalSearch] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
 

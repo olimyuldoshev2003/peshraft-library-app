@@ -1,7 +1,9 @@
 import Book from "@/screens/application/Book";
+import Bookshelf from "@/screens/application/Bookshelf";
 import Home from "@/screens/application/Home";
 import Notifications from "@/screens/application/Notifications";
 import ReceivedBook from "@/screens/application/ReceivedBook";
+import ReturnBook from "@/screens/application/ReturnBook";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -43,6 +45,20 @@ const StackNavigatorHomePage = () => {
       <Stack.Screen
         name="ReceivedBook"
         component={ReceivedBook}
+        options={{
+          animation: "ios_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="ReturnBook"
+        component={ReturnBook}
+        options={{
+          animation: "ios_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="Bookshelf"
+        component={Bookshelf}
         options={{
           animation: "ios_from_right",
         }}

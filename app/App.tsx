@@ -7,6 +7,8 @@ import {
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import "../i18n";
+import { Provider } from "react-redux";
+import { store } from "@/store/store";
 
 const App = () => {
   return (
@@ -17,14 +19,15 @@ const App = () => {
         </View>
       }
     >
-
-    <NavigationIndependentTree>
-      <AuthProvider>
-        <NavigationContainer>
-          <StackNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-    </NavigationIndependentTree>
+      <NavigationIndependentTree>
+        <Provider store={store}>
+          <AuthProvider>
+            <NavigationContainer>
+              <StackNavigator />
+            </NavigationContainer>
+          </AuthProvider>
+        </Provider>
+      </NavigationIndependentTree>
     </React.Suspense>
   );
 };

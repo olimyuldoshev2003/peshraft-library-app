@@ -1,6 +1,6 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useNavigation } from "expo-router";
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useState, useEffect } from "react";
 import { sendReceiveBookRequest } from "@/firebase/mobile.services";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -49,7 +49,7 @@ const ModalReceivingBook = ({
   const { t } = useTranslation();
   const { currentUser, userProfile } = useAuth();
 
-  // ✅ NEW: loading state so the button shows a spinner while saving
+  // loading state so the button shows a spinner while saving
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -70,36 +70,22 @@ const ModalReceivingBook = ({
     return `${d}.${m}.${y}`;
   };
 
-  // Helper to add days to a date string (DD.MM.YYYY)
-  const addDaysToDate = (dateStr: string, daysToAdd: number): string => {
-    if (!dateStr) return "";
-    const [day, month, year] = dateStr.split(".").map(Number);
-    const date = new Date(year, month - 1, day);
-    date.setDate(date.getDate() + daysToAdd);
-    const d = String(date.getDate()).padStart(2, "0");
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const y = date.getFullYear();
-    return `${d}.${m}.${y}`;
-  };
-
-  // Auto-fill form when modal opens
-  React.useEffect(() => {
+  // Auto-fill form when modal opens - returning date is NOT auto-filled
+  useEffect(() => {
     if (modalReceivingBook) {
       const today = getTodayString();
-      // Default borrow period is 14 days
-      const defaultReturnDate = addDaysToDate(today, 14);
 
       setFormData((prev) => ({
         ...prev,
-        fullName: userProfile?.fullName || "User",
+        fullName: userProfile?.fullName || currentUser?.displayName || "User",
         jobTitle: "Member",
         bookName: book?.title || prev.bookName,
         author: book?.author || prev.author,
         receivingDate: today,
-        returningDate: defaultReturnDate,
+        returningDate: "", // Empty - user must enter manually
       }));
     }
-  }, [modalReceivingBook]);
+  }, [modalReceivingBook, currentUser, userProfile, book]);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
@@ -215,7 +201,7 @@ const ModalReceivingBook = ({
         if (!isValidDate(value, false))
           return "Please enter a valid future date (DD.MM.YYYY)";
 
-        // ✅ NEW: Validate that returning date is after receiving date
+        // Validate that returning date is after receiving date
         if (data.receivingDate) {
           if (!isValidDate(data.receivingDate, false)) {
             return "Please fix the receiving date first";
@@ -229,7 +215,7 @@ const ModalReceivingBook = ({
             return "Returning date must be after the receiving date";
           }
 
-          // Optional: Add maximum borrow period validation (e.g., 30 days max)
+          // Maximum borrow period validation (e.g., 30 days max)
           const daysDifference = getDaysDifference(data.receivingDate, value);
           if (daysDifference > 30) {
             return "Borrow period cannot exceed 30 days";
@@ -339,10 +325,32 @@ const ModalReceivingBook = ({
   };
 
   const handleSubmit = async () => {
+    // Double-check authentication before submitting
+    if (!currentUser || !userProfile) {
+      Alert.alert(
+        "Authentication Required",
+        "You must be logged in to request a book. Please log in and try again.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setModalReceivingBook(false);
+              navigation.navigate("Login");
+            },
+          },
+        ],
+      );
+      return;
+    }
+
     // Force fill hidden fields before validating
     const updatedData = {
       ...formData,
-      fullName: formData.fullName || userProfile?.fullName || "User",
+      fullName:
+        formData.fullName ||
+        userProfile?.fullName ||
+        currentUser?.displayName ||
+        "User",
       jobTitle: formData.jobTitle || "Member",
       bookName: formData.bookName || book?.title || "",
       author: formData.author || book?.author || "",
@@ -364,25 +372,17 @@ const ModalReceivingBook = ({
       return;
     }
 
-    // ✅ FIXED: Actually send the request to Firebase!
-    // Before this fix, the form just showed an alert and did nothing.
-    // Now it saves to the "bookRequests" collection in Firestore.
-    if (!currentUser || !userProfile) {
-      Alert.alert("Error", "You must be logged in to request a book.");
-      return;
-    }
-
     if (!book?.id) {
       Alert.alert("Error", "Book information is missing. Please try again.");
       return;
     }
 
     try {
-      setIsSubmitting(true); // show loading spinner on button
+      setIsSubmitting(true);
 
       await sendReceiveBookRequest({
-        userId: userProfile.id, // Firestore document ID of the user
-        bookId: book.id, // Firestore document ID of the book
+        userId: userProfile.id,
+        bookId: book.id,
         bookTitle: updatedData.bookName,
         author: updatedData.author,
         userName: updatedData.fullName,
@@ -392,7 +392,7 @@ const ModalReceivingBook = ({
         borrowUntil: updatedData.returningDate,
       });
 
-      // ✅ Success! Show alert then close
+      // Success! Show alert then close
       Alert.alert(t("modalReceivingBook.t33"), t("modalReceivingBook.t34"), [
         {
           text: "OK",
@@ -404,13 +404,12 @@ const ModalReceivingBook = ({
         },
       ]);
     } catch (error: any) {
-      // ✅ Show the real error message (e.g. "already has pending request")
       Alert.alert(
         "Request Failed",
         error.message || "Something went wrong. Please try again.",
       );
     } finally {
-      setIsSubmitting(false); // always hide spinner
+      setIsSubmitting(false);
     }
   };
 
@@ -530,7 +529,7 @@ const ModalReceivingBook = ({
               )}
             </View>
 
-            {/* Receiving Date */}
+            {/* Receiving Date - Auto-filled, read-only */}
             <View
               style={[
                 styles.labelAndInputReceivingDateBlock,
@@ -548,7 +547,7 @@ const ModalReceivingBook = ({
                   touched.receivingDate &&
                     errors.receivingDate &&
                     styles.inputError,
-                  { color: "#00A9FF" }, // blue = auto-filled, read-only
+                  { color: "#00A9FF" },
                 ]}
                 keyboardType="numeric"
                 value={formData.receivingDate}
@@ -562,7 +561,7 @@ const ModalReceivingBook = ({
               )}
             </View>
 
-            {/* Returning Date */}
+            {/* Returning Date - User must enter manually */}
             <View
               style={[
                 styles.labelAndInputReturningDateBlock,
@@ -587,7 +586,7 @@ const ModalReceivingBook = ({
                   handleInputChange("returningDate", text)
                 }
                 onBlur={() => handleBlur("returningDate")}
-                placeholder={t("modalReceivingBook.t13")}
+                placeholder="DD.MM.YYYY"
                 placeholderTextColor="#999"
                 maxLength={10}
               />
@@ -596,7 +595,7 @@ const ModalReceivingBook = ({
               )}
             </View>
 
-            {/* Submit Button — shows spinner while saving */}
+            {/* Submit Button */}
             <Pressable
               style={[
                 styles.submitButton,
@@ -663,13 +662,13 @@ const styles = StyleSheet.create({
   },
   nameAndAuthorOfBookBlock: {},
   nameOfBook: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "500",
     textAlign: "center",
   },
   authorOfBook: {
     color: "#515151",
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "400",
     textAlign: "center",
   },
@@ -708,7 +707,6 @@ const styles = StyleSheet.create({
   labelReturningDate: {},
   inputReturningDate: {},
 
-  // Styles with the same properties and names
   labelAndInputBlock: {
     marginBottom: 5,
   },
