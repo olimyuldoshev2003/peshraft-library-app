@@ -44,15 +44,14 @@ const ModalReceivingBook = ({
   modalReceivingBook: boolean;
   setModalReceivingBook: Dispatch<SetStateAction<boolean>>;
   book?: any;
-  }) => {
-  
-  const navigation: any = useNavigation(); 
+}) => {
+  const navigation: any = useNavigation();
   const { t } = useTranslation();
   const { currentUser, userProfile } = useAuth();
 
   // ✅ NEW: loading state so the button shows a spinner while saving
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     jobTitle: "Member",
@@ -61,7 +60,6 @@ const ModalReceivingBook = ({
     receivingDate: "",
     returningDate: "",
   });
-
 
   // Helper to get today as DD.MM.YYYY
   const getTodayString = (): string => {
@@ -72,16 +70,33 @@ const ModalReceivingBook = ({
     return `${d}.${m}.${y}`;
   };
 
+  // Helper to add days to a date string (DD.MM.YYYY)
+  const addDaysToDate = (dateStr: string, daysToAdd: number): string => {
+    if (!dateStr) return "";
+    const [day, month, year] = dateStr.split(".").map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + daysToAdd);
+    const d = String(date.getDate()).padStart(2, "0");
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const y = date.getFullYear();
+    return `${d}.${m}.${y}`;
+  };
+
   // Auto-fill form when modal opens
   React.useEffect(() => {
     if (modalReceivingBook) {
-      setFormData(prev => ({
+      const today = getTodayString();
+      // Default borrow period is 14 days
+      const defaultReturnDate = addDaysToDate(today, 14);
+
+      setFormData((prev) => ({
         ...prev,
         fullName: userProfile?.fullName || "User",
         jobTitle: "Member",
         bookName: book?.title || prev.bookName,
         author: book?.author || prev.author,
-        receivingDate: getTodayString(), // ✅ auto-fill today
+        receivingDate: today,
+        returningDate: defaultReturnDate,
       }));
     }
   }, [modalReceivingBook]);
@@ -105,43 +120,64 @@ const ModalReceivingBook = ({
     return previousText;
   };
 
-  // Validate date
-  const isValidDate = (dateStr: string): boolean => {
-    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) return false;
-
+  // Parse date string "DD.MM.YYYY" to Date object
+  const parseDate = (dateStr: string): Date | null => {
+    if (!dateStr || !/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) return null;
     const [day, month, year] = dateStr.split(".").map(Number);
-
-    // Check if date is valid
     const date = new Date(year, month - 1, day);
+    // Check if date is valid
     if (
       date.getFullYear() !== year ||
       date.getMonth() !== month - 1 ||
       date.getDate() !== day
     ) {
-      return false;
+      return null;
     }
+    return date;
+  };
 
-    // Check if date is not in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date < today) {
-      return false;
+  // Validate date format and that it's not in the past
+  const isValidDate = (
+    dateStr: string,
+    allowPast: boolean = false,
+  ): boolean => {
+    const date = parseDate(dateStr);
+    if (!date) return false;
+
+    // Check if date is not in the past (unless allowed)
+    if (!allowPast) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date < today) {
+        return false;
+      }
     }
 
     return true;
   };
 
-  // Compare two dates
+  // Compare two dates: returns true if date2 is after date1
   const isDateAfter = (date1: string, date2: string): boolean => {
-    if (!date1 || !date2) return true;
+    const d1 = parseDate(date1);
+    const d2 = parseDate(date2);
+    if (!d1 || !d2) return true;
+    return d2 > d1;
+  };
 
-    const [day1, month1, year1] = date1.split(".").map(Number);
-    const [day2, month2, year2] = date2.split(".").map(Number);
+  // Check if dates are the same
+  const isSameDate = (date1: string, date2: string): boolean => {
+    const d1 = parseDate(date1);
+    const d2 = parseDate(date2);
+    if (!d1 || !d2) return false;
+    return d1.getTime() === d2.getTime();
+  };
 
-    const dateObj1 = new Date(year1, month1 - 1, day1);
-    const dateObj2 = new Date(year2, month2 - 1, day2);
-
-    return dateObj2 > dateObj1;
+  // Get difference in days between two dates
+  const getDaysDifference = (date1: string, date2: string): number => {
+    const d1 = parseDate(date1);
+    const d2 = parseDate(date2);
+    if (!d1 || !d2) return 0;
+    return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
   };
 
   const validateField = (
@@ -170,10 +206,38 @@ const ModalReceivingBook = ({
 
       case "receivingDate":
         if (!value || !value.trim()) return t("modalReceivingBook.t28");
+        if (!isValidDate(value, false))
+          return "Please enter a valid future date (DD.MM.YYYY)";
         return "";
 
       case "returningDate":
         if (!value || !value.trim()) return t("modalReceivingBook.t31");
+        if (!isValidDate(value, false))
+          return "Please enter a valid future date (DD.MM.YYYY)";
+
+        // ✅ NEW: Validate that returning date is after receiving date
+        if (data.receivingDate) {
+          if (!isValidDate(data.receivingDate, false)) {
+            return "Please fix the receiving date first";
+          }
+
+          if (isSameDate(value, data.receivingDate)) {
+            return "Returning date must be after the receiving date";
+          }
+
+          if (!isDateAfter(data.receivingDate, value)) {
+            return "Returning date must be after the receiving date";
+          }
+
+          // Optional: Add maximum borrow period validation (e.g., 30 days max)
+          const daysDifference = getDaysDifference(data.receivingDate, value);
+          if (daysDifference > 30) {
+            return "Borrow period cannot exceed 30 days";
+          }
+          if (daysDifference < 1) {
+            return "Returning date must be at least 1 day after receiving date";
+          }
+        }
         return "";
 
       default:
@@ -199,7 +263,7 @@ const ModalReceivingBook = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (name: string, value: string) => {
+  const handleInputChange = (name: any, value: string) => {
     let formattedValue = value;
 
     // Apply formatting for date fields
@@ -226,7 +290,11 @@ const ModalReceivingBook = ({
           const returningDateError = validateField(
             "returningDate",
             formData.returningDate,
-            { ...formData, [name]: formattedValue },
+            {
+              ...formData,
+              receivingDate: formattedValue,
+              [name]: formattedValue,
+            },
           );
           setErrors((prev) => ({ ...prev, returningDate: returningDateError }));
         }
@@ -235,7 +303,11 @@ const ModalReceivingBook = ({
           const receivingDateError = validateField(
             "receivingDate",
             formData.receivingDate,
-            { ...formData, [name]: formattedValue },
+            {
+              ...formData,
+              returningDate: formattedValue,
+              [name]: formattedValue,
+            },
           );
           setErrors((prev) => ({ ...prev, receivingDate: receivingDateError }));
         }
@@ -309,8 +381,8 @@ const ModalReceivingBook = ({
       setIsSubmitting(true); // show loading spinner on button
 
       await sendReceiveBookRequest({
-        userId: userProfile.id,           // Firestore document ID of the user
-        bookId: book.id,                  // Firestore document ID of the book
+        userId: userProfile.id, // Firestore document ID of the user
+        bookId: book.id, // Firestore document ID of the book
         bookTitle: updatedData.bookName,
         author: updatedData.author,
         userName: updatedData.fullName,
@@ -331,12 +403,11 @@ const ModalReceivingBook = ({
           },
         },
       ]);
-
     } catch (error: any) {
       // ✅ Show the real error message (e.g. "already has pending request")
       Alert.alert(
         "Request Failed",
-        error.message || "Something went wrong. Please try again."
+        error.message || "Something went wrong. Please try again.",
       );
     } finally {
       setIsSubmitting(false); // always hide spinner
@@ -344,7 +415,6 @@ const ModalReceivingBook = ({
   };
 
   const handleClose = () => {
-    // Reset form when closing
     resetForm();
     setModalReceivingBook(false);
   };
@@ -381,7 +451,11 @@ const ModalReceivingBook = ({
             </View>
             <View style={styles.imgNameAndAuthorOfThisBookBlock}>
               <Image
-                source={book?.image_url ? { uri: book.image_url } : require("../../assets/peshraft-library/home/tojikon.jpg")}
+                source={
+                  book?.image_url
+                    ? { uri: book.image_url }
+                    : require("../../assets/peshraft-library/home/tojikon.jpg")
+                }
                 style={styles.imgOfBook}
               />
               <View style={styles.nameAndAuthorOfBookBlock}>
@@ -404,7 +478,8 @@ const ModalReceivingBook = ({
               ]}
             >
               <Text style={[styles.label, styles.labelBookName]}>
-                {t("modalReceivingBook.t6")} <Text style={styles.requiredStar}>*</Text>
+                {t("modalReceivingBook.t6")}{" "}
+                <Text style={styles.requiredStar}>*</Text>
               </Text>
               <TextInput
                 style={[
@@ -415,6 +490,7 @@ const ModalReceivingBook = ({
                 value={formData.bookName}
                 onChangeText={(text) => handleInputChange("bookName", text)}
                 onBlur={() => handleBlur("bookName")}
+                editable={false}
                 placeholder={t("modalReceivingBook.t7")}
                 placeholderTextColor="#999"
                 maxLength={100}
@@ -432,7 +508,8 @@ const ModalReceivingBook = ({
               ]}
             >
               <Text style={[styles.label, styles.labelAuthor]}>
-                {t("modalReceivingBook.t8")} <Text style={styles.requiredStar}>*</Text>
+                {t("modalReceivingBook.t8")}{" "}
+                <Text style={styles.requiredStar}>*</Text>
               </Text>
               <TextInput
                 style={[
@@ -443,6 +520,7 @@ const ModalReceivingBook = ({
                 value={formData.author}
                 onChangeText={(text) => handleInputChange("author", text)}
                 onBlur={() => handleBlur("author")}
+                editable={false}
                 placeholder={t("modalReceivingBook.t9")}
                 placeholderTextColor="#999"
                 maxLength={50}
@@ -460,12 +538,16 @@ const ModalReceivingBook = ({
               ]}
             >
               <Text style={[styles.label, styles.labelReceivingDate]}>
-                {t("modalReceivingBook.t10")} <Text style={styles.requiredStar}>*</Text>
+                {t("modalReceivingBook.t10")}{" "}
+                <Text style={styles.requiredStar}>*</Text>
               </Text>
               <TextInput
                 style={[
                   styles.input,
                   styles.inputReceivingDate,
+                  touched.receivingDate &&
+                    errors.receivingDate &&
+                    styles.inputError,
                   { color: "#00A9FF" }, // blue = auto-filled, read-only
                 ]}
                 keyboardType="numeric"
@@ -488,7 +570,8 @@ const ModalReceivingBook = ({
               ]}
             >
               <Text style={[styles.label, styles.labelReturningDate]}>
-                {t("modalReceivingBook.t12")} <Text style={styles.requiredStar}>*</Text>
+                {t("modalReceivingBook.t12")}{" "}
+                <Text style={styles.requiredStar}>*</Text>
               </Text>
               <TextInput
                 style={[
@@ -515,14 +598,19 @@ const ModalReceivingBook = ({
 
             {/* Submit Button — shows spinner while saving */}
             <Pressable
-              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+              style={[
+                styles.submitButton,
+                isSubmitting && styles.submitButtonDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>{t("modalReceivingBook.t14")}</Text>
+                <Text style={styles.submitButtonText}>
+                  {t("modalReceivingBook.t14")}
+                </Text>
               )}
             </Pressable>
           </ScrollView>

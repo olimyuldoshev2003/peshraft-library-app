@@ -557,8 +557,16 @@ const Home = () => {
                 </View>
               )}
 
+              {/* Loading Spinner for All Books */}
+              {!booksError && loadingBooks && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#00A9FF" />
+                  <Text style={styles.loadingText}>Loading books...</Text>
+                </View>
+              )}
+
               {!booksError &&
-                loadingBooks === false &&
+                !loadingBooks &&
                 filteredBooks.length === 0 &&
                 searchDebounced && (
                   <View
@@ -575,17 +583,17 @@ const Home = () => {
                 )}
 
               {!booksError &&
-                loadingBooks === false &&
+                !loadingBooks &&
                 filteredBooks.length === 0 &&
                 !searchDebounced && (
-                  <Text style={styles.noBooksText}>Books not found</Text>
+                  <View style={styles.noBooksContainer}>
+                    <Text style={styles.noBooksText}>Books not found</Text>
+                  </View>
                 )}
 
-              {loadingBooks && (
-                <Text style={styles.loadingText}>Loading books...</Text>
-              )}
-
-              {!loadingBooks && filteredBooks.map(renderBookItem)}
+              {!loadingBooks &&
+                !booksError &&
+                filteredBooks.map(renderBookItem)}
             </View>
           </View>
         </ScrollView>
@@ -719,7 +727,7 @@ const styles = StyleSheet.create({
   },
   receivedBooksBlockScrollView: {
     gap: 15,
-    paddingRight: 440,
+    paddingRight: 5,
     paddingVertical: 10,
   },
   receivedBooksBlock: {},
@@ -932,11 +940,23 @@ const styles = StyleSheet.create({
     marginTop: 40,
     width: "100%",
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+    width: "100%",
+  },
   loadingText: {
     fontSize: 16,
     fontWeight: "400",
     color: "#515151",
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 12,
+  },
+  noBooksContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
+    width: "100%",
   },
 });
