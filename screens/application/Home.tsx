@@ -103,7 +103,7 @@ const Home = () => {
       setBooks(data || []);
     } catch (error: any) {
       console.error("Error loading books:", error);
-      setBooksError(error.message || "Failed to load books");
+      setBooksError(error.message || t("home.t9"));
       setBooks([]);
     } finally {
       setLoadingBooks(false);
@@ -115,7 +115,10 @@ const Home = () => {
     try {
       setCategoriesLoading(true);
       const data = await getCategories();
-      setCategories([{ id: "all", filterName: "All" }, ...(data || [])]);
+      setCategories([
+        { id: "all", filterName: t("home.t10") },
+        ...(data || []),
+      ]);
     } catch (err: any) {
       console.error("Error loading categories:", err);
     } finally {
@@ -209,7 +212,7 @@ const Home = () => {
   // Handle toggle favorite from home screen
   const handleToggleFavorite = async (bookId: string) => {
     if (!currentUser?.uid) {
-      Alert.alert("Error", "Please login to add favorites");
+      Alert.alert(t("home.t11"), t("home.t12"));
       return;
     }
 
@@ -232,7 +235,7 @@ const Home = () => {
       // Refresh favorite books list in the background
       await dispatch(refreshFavoriteBooks(currentUser.uid));
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      console.error(`Error toggling favorite:`, error);
     }
   };
 
@@ -594,7 +597,7 @@ const Home = () => {
             ) : receivedBooks.length === 0 ? (
               <View style={{ paddingVertical: 20, alignItems: "center" }}>
                 <Text style={{ color: "#939393", fontSize: 14 }}>
-                  No borrowed books
+                  {t("home.t13")}
                 </Text>
               </View>
             ) : (
@@ -633,7 +636,7 @@ const Home = () => {
                   </Text>
                   <Pressable onPress={loadAllBooks} style={{ marginTop: 10 }}>
                     <Text style={{ color: "#00A9FF", fontSize: 14 }}>
-                      Try Again
+                      {t("home.t14")}
                     </Text>
                   </Pressable>
                 </View>
@@ -643,7 +646,7 @@ const Home = () => {
               {!booksError && loadingBooks && (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#00A9FF" />
-                  <Text style={styles.loadingText}>Loading books...</Text>
+                  <Text style={styles.loadingText}>{t("home.t15")}...</Text>
                 </View>
               )}
 
@@ -659,7 +662,7 @@ const Home = () => {
                     }}
                   >
                     <Text style={styles.noBooksText}>
-                      No books found for "{searchDebounced}"
+                      {t("home.t16")} "{searchDebounced}"
                     </Text>
                   </View>
                 )}
@@ -669,7 +672,7 @@ const Home = () => {
                 filteredBooks.length === 0 &&
                 !searchDebounced && (
                   <View style={styles.noBooksContainer}>
-                    <Text style={styles.noBooksText}>Books not found</Text>
+                    <Text style={styles.noBooksText}>{t("home.t17")}</Text>
                   </View>
                 )}
 

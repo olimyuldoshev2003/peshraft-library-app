@@ -53,7 +53,7 @@ const Profile = ({
       await setShowLogoutModal(false);
     } finally {
       setLoading(false);
-      Alert.alert("Logged out", "You have been successfully logged out.", [
+      Alert.alert(t("profile.t11"), t("profile.t12"), [
         {
           text: "OK",
           onPress: () => {},
@@ -66,7 +66,7 @@ const Profile = ({
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#00A9FF" />
-        <Text style={{ marginTop: 10, color: "#555" }}>Logging out...</Text>
+        <Text style={{ marginTop: 10, color: "#555" }}>{t("profile.t12")}...</Text>
       </View>
     );
   }
@@ -249,10 +249,7 @@ const Profile = ({
                   const storeUrl =
                     "https://play.google.com/store/apps/details?id=com.peshraft.library";
                   Linking.openURL(storeUrl).catch(() => {
-                    Alert.alert(
-                      "Error",
-                      "Could not open the store. Please try again.",
-                    );
+                    Alert.alert(t("home.t13"), t("home.t14"));
                   });
                 }}
               >

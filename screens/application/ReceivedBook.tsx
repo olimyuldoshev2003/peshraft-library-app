@@ -168,7 +168,7 @@ const ReceivedBook = ({ route }: { route?: any }) => {
               fontSize: 18,
             }}
           >
-            No borrowed books yet
+            {t("receivedBook.t8")}
           </Text>
         </View>
       </View>
@@ -218,11 +218,11 @@ const ReceivedBook = ({ route }: { route?: any }) => {
     }
 
     if (daysLeft < 0) {
-      return `${t("receivedBook.overdue") || "Overdue by"} ${Math.abs(daysLeft)} ${t("receivedBook.days") || "days"}`;
+      return `${t("receivedBook.t9")} ${Math.abs(daysLeft)} ${t("receivedBook.days") || "days"}`;
     }
 
     if (daysLeft === 0) {
-      return t("receivedBook.dueToday") || "Due today";
+      return t("receivedBook.t10");
     }
 
     return `${daysLeft} ${t("receivedBook.t5")}`;

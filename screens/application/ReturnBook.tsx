@@ -17,8 +17,8 @@ import { sendReturnBookRequest } from "@/firebase/mobile.services";
 
 const ReturnBook = ({ route }: { route?: any }) => {
   const navigation: any = useNavigation();
-  const { currentUser, userProfile } = useAuth();
   const { t } = useTranslation();
+  const { currentUser, userProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // borrowData is passed from ReceivedBook screen
@@ -33,14 +33,14 @@ const ReturnBook = ({ route }: { route?: any }) => {
           color="black"
           onPress={() => navigation.goBack()}
         />
-        <Text style={styles.emptyText}>No book data found.</Text>
+        <Text style={styles.emptyText}>{t("returnBook.t1")}.</Text>
       </View>
     );
   }
 
   const handleConfirmReturn = async () => {
     if (!currentUser || !userProfile) {
-      Alert.alert("Error", "You must be logged in.");
+      Alert.alert(t("returnBook.t2"), `${t("returnBook.t3")}.`);
       return;
     }
 
@@ -50,7 +50,7 @@ const ReturnBook = ({ route }: { route?: any }) => {
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Yes, Return",
+          text: `${t("returnBook.t4")}, ${t("returnBook.t5")}`,
           style: "destructive",
           onPress: async () => {
             try {
@@ -61,27 +61,31 @@ const ReturnBook = ({ route }: { route?: any }) => {
                 bookId: borrowData.bookId,
                 bookTitle: borrowData.bookTitle,
                 author: borrowData.author || "",
-                borrowerName: borrowData.borrowerName || userProfile.fullName || "",
-                phoneNumber: borrowData.phoneNumber || userProfile.phoneNumber || "",
-                email: borrowData.email || userProfile.email || currentUser.email || "",
-                member_image_url: userProfile.member_image_url || "",  // ✅ spec requires this
+                borrowerName:
+                  borrowData.borrowerName || userProfile.fullName || "",
+                phoneNumber:
+                  borrowData.phoneNumber || userProfile.phoneNumber || "",
+                email:
+                  borrowData.email ||
+                  userProfile.email ||
+                  currentUser.email ||
+                  "",
+                member_image_url: userProfile.member_image_url || "", // ✅ spec requires this
                 dateBorrowed: borrowData.dateBorrowed,
                 dueDate: borrowData.dueDate,
               });
 
-              Alert.alert(
-                "Return Request Sent!",
-                "The admin will process your return request. Your bookshelf will update once approved.",
-                [{ text: "OK", onPress: () => navigation.navigate("Home") }]
-              );
+              Alert.alert(`${t("returnBook.t6")}!`, `${t("returnBook.t7")}.`, [
+                { text: "OK", onPress: () => navigation.navigate("Home") },
+              ]);
             } catch (error: any) {
-              Alert.alert("Error", error.message || "Something went wrong.");
+              Alert.alert("Error", error.message || `${t("returnBook.t8")}.`);
             } finally {
               setIsSubmitting(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -100,7 +104,7 @@ const ReturnBook = ({ route }: { route?: any }) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Return Book</Text>
+          <Text style={styles.title}>{ t("returnBook.t9")}</Text>
 
           {/* Book image */}
           <View style={styles.imageBlock}>
@@ -121,13 +125,13 @@ const ReturnBook = ({ route }: { route?: any }) => {
           {/* Borrow details */}
           <View style={styles.detailsCard}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Borrower</Text>
+              <Text style={styles.detailLabel}>{ t("returnBook.t10")}</Text>
               <Text style={styles.detailValue}>
                 {borrowData.borrowerName || userProfile?.fullName || "-"}
               </Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Due Date</Text>
+              <Text style={styles.detailLabel}> {t("returnBook.t11")}</Text>
               <Text style={[styles.detailValue, { color: "#FF383C" }]}>
                 {borrowData.dueDate || "-"}
               </Text>
@@ -135,20 +139,22 @@ const ReturnBook = ({ route }: { route?: any }) => {
           </View>
 
           <Text style={styles.infoNote}>
-            When you tap "Confirm Return", a request will be sent to the admin. 
-            The book will be marked as returned once the admin approves.
+            {t("returnBook.t12")}.
           </Text>
 
           {/* Confirm button */}
           <Pressable
-            style={[styles.confirmBtn, isSubmitting && styles.confirmBtnDisabled]}
+            style={[
+              styles.confirmBtn,
+              isSubmitting && styles.confirmBtnDisabled,
+            ]}
             onPress={handleConfirmReturn}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.confirmBtnText}>Confirm Return</Text>
+              <Text style={styles.confirmBtnText}>{t("returnBook.t13")}</Text>
             )}
           </Pressable>
         </ScrollView>
@@ -162,7 +168,12 @@ export default ReturnBook;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   block: { padding: 18, paddingTop: 26, flex: 1 },
-  emptyText: { textAlign: "center", color: "#999", marginTop: 40, fontSize: 18 },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    marginTop: 40,
+    fontSize: 18,
+  },
   scrollContent: { marginTop: 20, gap: 16, paddingBottom: 100 },
   title: { fontSize: 26, fontWeight: "600", textAlign: "center" },
   imageBlock: { justifyContent: "center", alignItems: "center" },

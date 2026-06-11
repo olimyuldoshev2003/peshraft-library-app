@@ -35,7 +35,6 @@ const ReviewBook = ({
   const dispatch = useAppDispatch();
 
   console.log(bookId);
-  
 
   const loadingReviewsOfBook = useAppSelector(
     (state) => state.peshraftLibraryState.loadingReviewsOfBook,
@@ -52,7 +51,6 @@ const ReviewBook = ({
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchTempValue, setSearchTempValue] = useState("");
-
 
   // Use reviews from Redux instead of local state
   const reviews = reviewsOfBook || [];
@@ -196,7 +194,7 @@ const ReviewBook = ({
                       fontSize: 16,
                     }}
                   >
-                    No reviews found for "{searchValue}"
+                    {t("reviewBook.t6")} "{searchValue}"
                   </Text>
                 )}
               {!loadingReviewsOfBook &&
@@ -210,7 +208,7 @@ const ReviewBook = ({
                       fontSize: 16,
                     }}
                   >
-                    No reviews yet. Be the first!
+                    {t("reviewBook.t7")}!
                   </Text>
                 )}
               {reviewsOfBook.map((rev: any) => (
@@ -290,7 +288,7 @@ const ReviewBook = ({
               }}
             >
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Search Reviews</Text>
+                <Text style={styles.modalTitle}>{ t("reviewBook.t6")}</Text>
                 <Pressable
                   onPress={handleCloseModal}
                   style={styles.modalCloseBtn}
@@ -331,14 +329,14 @@ const ReviewBook = ({
                   style={[styles.modalButton, styles.modalCancelButton]}
                   onPress={handleCloseModal}
                 >
-                  <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                  <Text style={styles.modalCancelButtonText}>{t("reviewBook.t7")}</Text>
                 </Pressable>
                 <Pressable
                   style={[styles.modalButton, styles.modalSearchButton]}
                   onPress={handleSearchSubmit}
                 >
                   <Feather name="search" size={18} color="#fff" />
-                  <Text style={styles.modalSearchButtonText}>Search</Text>
+                  <Text style={styles.modalSearchButtonText}>{t("reviewBook.t8")}</Text>
                 </Pressable>
               </View>
             </Pressable>

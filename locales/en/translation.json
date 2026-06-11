@@ -14,7 +14,16 @@
     "t5": "days left",
     "t6": "All books",
     "t7": "reader",
-    "t8": "readers"
+    "t8": "readers",
+    "t9": "Failed to load books",
+    "t10": "All",
+    "t11": "Error",
+    "t12": "Please login to add favorites",
+    "t13": "No received books",
+    "t14": "Try Again",
+    "t15": "Loading books",
+    "t16": "No books found for",
+    "t17": "Books not found"
   },
   "notifications": {
     "t1": "Notifications",
@@ -39,7 +48,26 @@
     "t4": "day left",
     "t5": "days left",
     "t6": "Return the book",
-    "t7": "You may like this"
+    "t7": "You may like this",
+
+    "t8": "No borrowed books yet",
+    "t9": "Overdue by",
+    "t10": "Due today"
+  },
+  "returnBook": {
+    "t1": "No book data found",
+    "t2": "Error",
+    "t3": "You must be logged in",
+    "t4": "Yes",
+    "t5": "Return",
+    "t6": "Return Request Sent",
+    "t7": "The admin will process your return request. Your bookshelf will update once approved",
+    "t8": "Something went wrong",
+    "t9": "Return Book",
+    "t10": "Borrower",
+    "t11": "Due Date",
+    "t12": "When you tap 'Confirm Return', a request will be sent to the admin. The book will be marked as returned once the admin approves",
+    "t13": "Confirm Return"
   },
   "book": {
     "t1": "page",
@@ -61,14 +89,19 @@
     "t2": "Add review",
     "t3": "Search",
     "t4": "day ago",
-    "t5": "days ago"
+    "t5": "days ago",
+    "t6": "No reviews found for",
+    "t7": "No reviews yet. Be the first"
   },
   "modalAddReview": {
     "t1": "Add Review",
     "t2": "Your Overall Rating Of The Book",
     "t3": "Add Detailed Review",
     "t4": "Enter your review",
-    "t5": "Submit"
+    "t5": "Submit",
+    "t6": "Search Reviews",
+    "t7": "Cancel",
+    "t8": "Search"
   },
   "modalReceivingBook": {
     "t1": "Receive Book",
@@ -138,7 +171,12 @@
     "t6": "Appearance",
     "t7": "Language",
     "t8": "Update app",
-    "t9": "Logout"
+    "t9": "Logout",
+    "t10": "Logged out",
+    "t11": "You have been successfully logged out",
+    "t12": "Logging out",
+    "t13": "Error",
+    "t14": "Could not open the store. Please try again"
   },
   "logoutModal": {
     "t1": "Logout",
@@ -278,7 +316,8 @@
   "historyBook": {
     "t1": "History",
     "t2": "reader",
-    "t3": "readers"
+    "t3": "readers",
+    "t4": "No history yet"
   },
   "feedback": {
     "t1": "Feedback",
