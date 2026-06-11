@@ -40,6 +40,12 @@ const Profile = ({
   const { logout, currentUser, userProfile } = useAuth();
   const profileImg = userProfile?.member_image_url || null;
 
+  const dynamicStyles = StyleSheet.create({
+    btnTextEdit: {
+      fontSize: i18n.language === "ru" ? 13 : 16,
+    },
+  });
+
   const handleLogout = async () => {
     try {
       setLoading(true);
@@ -55,12 +61,6 @@ const Profile = ({
       ]);
     }
   };
-
-  const dynamicStyles = StyleSheet.create({
-    btnTextEdit: {
-      fontSize: i18n.language === "ru" ? 13 : 16,
-    },
-  });
 
   if (loading) {
     return (
@@ -79,13 +79,21 @@ const Profile = ({
           <View style={styles.userImgFullnameAndEmailAndBtnEditBlock}>
             <View style={styles.userImgBlock}>
               <Image
-                source={profileImg ? { uri: profileImg } : require("../../assets/peshraft-library/profile/profile-img.jpg")}
+                source={
+                  profileImg
+                    ? { uri: profileImg }
+                    : require("../../assets/peshraft-library/profile/profile-img.jpg")
+                }
                 style={styles.userImg}
               />
             </View>
             <View style={styles.userFullnameEmailAndBtnEditBlock}>
-              <Text style={styles.userFullname}>{userProfile?.fullName || currentUser?.displayName || "User"}</Text>
-              <Text style={styles.userEmail}>{userProfile?.email || currentUser?.email || ""}</Text>
+              <Text style={styles.userFullname}>
+                {userProfile?.fullName || currentUser?.displayName || "User"}
+              </Text>
+              <Text style={styles.userEmail}>
+                {userProfile?.email || currentUser?.email || ""}
+              </Text>
               <View style={styles.btnEditBlock}>
                 <Pressable
                   style={styles.btnEdit}
@@ -241,7 +249,10 @@ const Profile = ({
                   const storeUrl =
                     "https://play.google.com/store/apps/details?id=com.peshraft.library";
                   Linking.openURL(storeUrl).catch(() => {
-                    Alert.alert("Error", "Could not open the store. Please try again.");
+                    Alert.alert(
+                      "Error",
+                      "Could not open the store. Please try again.",
+                    );
                   });
                 }}
               >

@@ -1,9 +1,8 @@
 import Entypo from "@expo/vector-icons/Entypo";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { useNavigation } from "expo-router";
-import React from "react";
+import { useNavigation, useFocusEffect } from "expo-router";
+import React, { useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -14,42 +13,82 @@ import {
   StyleSheet,
   Text,
   View,
+  Dimensions,
 } from "react-native";
 
-import { getFavoriteBooks, getAllBooks } from "@/firebase/mobile.services";
 import { useAuth } from "@/context/AuthContext";
 import { useAppSelector } from "@/hooks/use-app-selector";
+import { useAppDispatch } from "@/hooks/use-app-dispatch";
+import { getAllBooks, getFavoriteBooks } from "@/api/api";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 const FavoriteBooks = () => {
   const navigation: any = useNavigation();
+  const dispatch = useAppDispatch();
   const { currentUser } = useAuth();
 
-  // const favoriteBooks = useAppSelector((state) => state.peshraftLibraryState)
+  // Get data from Redux store
+  const favoriteBooksFromStore = useAppSelector(
+    (state) => state.peshraftLibraryState.favoriteBooks,
+  );
+  const loadingFavoriteBooks = useAppSelector(
+    (state) => state.peshraftLibraryState.loadingFavoriteBooks,
+  );
+  const allBooksFromStore = useAppSelector(
+    (state) => state.peshraftLibraryState.allBooks,
+  );
+  const loadingAllBooks = useAppSelector(
+    (state) => state.peshraftLibraryState.loadingAllBooks,
+  );
 
   const [favoriteBooks, setFavoriteBooks] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
   const [refreshing, setRefreshing] = React.useState(false);
 
   async function loadData() {
     if (!currentUser) return;
-    setLoading(true);
-    const favs = await getFavoriteBooks(currentUser!.uid);
-    const allBooks = await getAllBooks();
-    const favBookIds = favs.map((f: any) => f.bookId);
-    const favBookData = allBooks.filter((b: any) => favBookIds.includes(b.id));
-    setFavoriteBooks(favBookData);
-    setLoading(false);
+    try {
+      // Dispatch Redux thunks
+      await dispatch(getFavoriteBooks(currentUser.uid)).unwrap();
+      await dispatch(getAllBooks({})).unwrap();
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
   }
 
-  React.useEffect(() => { loadData(); }, [currentUser]);
+  // Process favorite books whenever Redux data changes
+  useEffect(() => {
+    if (allBooksFromStore && favoriteBooksFromStore) {
+      const favBookIds = favoriteBooksFromStore.map((f: any) => f.bookId);
+      const favBookData = allBooksFromStore.filter((b: any) =>
+        favBookIds.includes(b.id),
+      );
+      setFavoriteBooks(favBookData);
+    }
+  }, [allBooksFromStore, favoriteBooksFromStore]);
+
+  // Load data when component mounts and when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [currentUser]),
+  );
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    try { await loadData(); } catch (e) {}
-    setRefreshing(false);
+    try {
+      await loadData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRefreshing(false);
+    }
   }, [currentUser]);
-  const {t} = useTranslation()
+
+  const { t } = useTranslation();
+
+  // Determine if we should show loading indicator
+  const isLoading = loadingFavoriteBooks || loadingAllBooks;
 
   return (
     <View style={styles.favoriteBooksComponent}>
@@ -60,51 +99,105 @@ const FavoriteBooks = () => {
           </Text>
         </View>
         <ScrollView
-refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#00A9FF"]} />}
-                    contentContainerStyle={styles.favoriteBooksScrollView}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#00A9FF"]}
+            />
+          }
+          contentContainerStyle={styles.favoriteBooksScrollView}
           style={styles.favoriteBooks}
           showsVerticalScrollIndicator={false}
         >
-          {loading && (
-            <ActivityIndicator size="large" color="#00A9FF" style={{ marginTop: 40 }} />
+          {isLoading && (
+            <ActivityIndicator
+              size="large"
+              color="#00A9FF"
+              style={{ marginTop: 40 }}
+            />
           )}
-          {!loading && favoriteBooks.length === 0 && (
-            <Text style={{ textAlign: "center", color: "#999", marginTop: 40 }}>No favorite books yet</Text>
+          {!isLoading && favoriteBooks.length === 0 && (
+            <Text style={{ textAlign: "center", color: "#999", marginTop: 40 }}>
+              {t("favoriteBooks.t4")}
+            </Text>
           )}
-          {favoriteBooks.map((book: any) => (
-            <Pressable key={book.id} onPress={() => { navigation.navigate("Book", { id: book.id }); }} style={styles.favoriteBookContainer}>
-              <View style={styles.favoriteBookContainerBlock1}>
-                <Image
-                  style={styles.favoriteBookImg}
-                  source={book.image_url ? { uri: book.image_url } : require("../../assets/peshraft-library/home/tojikon.jpg")}
-                />
-              </View>
-              <View style={styles.favoriteBookContainerBlock2}>
-                <View style={styles.nameAuthorOfBookAndHeartIcon}>
-                  <View style={styles.nameAndAuthorOfBook}>
-                    <Text style={styles.nameOfBook}>{book.title}</Text>
-                    <Text style={styles.authorOfBook}>{book.author}</Text>
-                  </View>
-                  <FontAwesome name="heart" size={20} color="red" style={styles.heartIcon} />
+          {!isLoading &&
+            favoriteBooks.map((book: any) => (
+              <Pressable
+                key={book.id}
+                onPress={() => {
+                  navigation.navigate("Book", { id: book.id });
+                }}
+                style={styles.favoriteBookContainer}
+              >
+                <View style={styles.favoriteBookContainerBlock1}>
+                  <Image
+                    style={styles.favoriteBookImg}
+                    source={
+                      book.image_url
+                        ? { uri: book.image_url }
+                        : require("../../assets/peshraft-library/home/tojikon.jpg")
+                    }
+                  />
                 </View>
-                <View style={styles.rateOfBookContainer}>
-                  <View style={styles.rateOfBookBlock}>
-                    <Entypo name="star" size={13} color="orange" style={styles.rateStarIcon} />
-                    <Text style={styles.rateInNumber}>{book.rating || "0"}</Text>
+                <View style={styles.favoriteBookContainerBlock2}>
+                  <View style={styles.nameAuthorOfBookAndHeartIcon}>
+                    <View style={styles.nameAndAuthorOfBook}>
+                      <Text
+                        style={styles.nameOfBook}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
+                        {book.title}
+                      </Text>
+                      <Text
+                        style={styles.authorOfBook}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {book.author}
+                      </Text>
+                    </View>
+                    <FontAwesome
+                      name="heart"
+                      size={20}
+                      color="red"
+                      style={styles.heartIcon}
+                    />
                   </View>
-                </View>
-                <View style={styles.numberOfReadersAndForwardIconBlock}>
-                  <View style={styles.userIconNumberOfReadersAndTextBlock}>
-                    <Feather name="users" size={24} color="#939393" style={styles.userIcon} />
-                    <View style={styles.numberAndTextReadersBlock}>
-                      <Text style={styles.numberOfReaders}>{book.readers || "0"}</Text>
+                  <View style={styles.rateOfBookContainer}>
+                    <View style={styles.rateOfBookBlock}>
+                      <Entypo
+                        name="star"
+                        size={13}
+                        color="orange"
+                        style={styles.rateStarIcon}
+                      />
+                      <Text style={styles.rateInNumber}>
+                        {book.rating || "0"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.numberOfReadersAndForwardIconBlock}>
+                    <View style={styles.userIconNumberOfReadersAndTextBlock}>
+                      <Feather
+                        name="users"
+                        size={24}
+                        color="#939393"
+                        style={styles.userIcon}
+                      />
+                      <View style={styles.numberAndTextReadersBlock}>
+                        <Text style={styles.numberOfReaders}>
+                          {book.readers || "0"}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
-            </Pressable>
-          ))}
-                </ScrollView>
+              </Pressable>
+            ))}
+        </ScrollView>
       </View>
     </View>
   );
@@ -149,12 +242,16 @@ const styles = StyleSheet.create({
     elevation: 5,
     backgroundColor: "#fff",
     borderRadius: 12,
+    overflow: "hidden",
   },
   favoriteBookContainerBlock1: {
     backgroundColor: "#F5EABD",
     padding: 20,
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
+    width: 122,
+    justifyContent: "center",
+    alignItems: "center",
   },
   favoriteBookImg: {
     width: 82,
@@ -163,68 +260,77 @@ const styles = StyleSheet.create({
   },
   favoriteBookContainerBlock2: {
     padding: 10,
+    flex: 1,
+    justifyContent: "center",
   },
   nameAuthorOfBookAndHeartIcon: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "79%",
+    alignItems: "flex-start",
+    width: "100%",
   },
   nameAndAuthorOfBook: {
-    justifyContent: "space-between",
+    flex: 1,
+    marginRight: 10,
   },
   nameOfBook: {
-    fontSize: 22,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 4,
   },
   authorOfBook: {
     color: "#515151",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400",
   },
-  heartIcon: {},
+  heartIcon: {
+    marginLeft: 10,
+  },
   rateOfBookContainer: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    marginTop: 20,
+    marginTop: 12,
   },
   rateOfBookBlock: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
     backgroundColor: "#FFF8E0",
-    padding: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
   },
   rateStarIcon: {},
   rateInNumber: {
-    fontSize: 10,
-    fontWeight: "400",
+    fontSize: 12,
+    fontWeight: "500",
   },
 
   numberOfReadersAndForwardIconBlock: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
-    width: "79%",
+    marginTop: 12,
+    width: "100%",
   },
   userIconNumberOfReadersAndTextBlock: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 4,
+    alignItems: "center",
+    gap: 6,
   },
   userIcon: {},
   numberAndTextReadersBlock: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 5,
+    alignItems: "baseline",
+    gap: 4,
   },
   numberOfReaders: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
   },
   titleOfReaders: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#939393",
   },
   forwardIconBlock: {
     borderWidth: 1,

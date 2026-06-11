@@ -14,17 +14,30 @@ import {
   Text,
   TextInput,
   View,
+  Dimensions,
 } from "react-native";
 
 import { getUserBookshelf, getBookById } from "@/firebase/mobile.services";
 import { useAuth } from "@/context/AuthContext";
 import { ActivityIndicator } from "react-native";
 
+const { width: screenWidth } = Dimensions.get("window");
+
 const Bookshelf = () => {
   const { currentUser } = useAuth();
   const [receivedBooksData, setReceivedBooksData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState("");
+  const [searchDebounced, setSearchDebounced] = React.useState("");
+
+  // Debounce search input
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchDebounced(searchValue);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
 
   // Helper function to parse "DD.MM.YYYY" format
   const parseDateFromDDMMYYYY = (dateStr: string): Date | null => {
@@ -137,8 +150,15 @@ const Bookshelf = () => {
       .finally(() => setLoading(false));
   }
 
-  console.log(receivedBooksData);
-  
+  // Filter received books based on search
+  const filteredBooks = React.useMemo(() => {
+    if (!searchDebounced) return receivedBooksData;
+    return receivedBooksData.filter(
+      (book: any) =>
+        book.bookTitle?.toLowerCase().includes(searchDebounced.toLowerCase()) ||
+        book.author?.toLowerCase().includes(searchDebounced.toLowerCase()),
+    );
+  }, [receivedBooksData, searchDebounced]);
 
   React.useEffect(() => {
     if (currentUser) {
@@ -196,6 +216,8 @@ const Bookshelf = () => {
               style={styles.inputSearch}
               placeholder={t("bookshelf.t2")}
               placeholderTextColor={"#939393"}
+              value={searchValue}
+              onChangeText={setSearchValue}
             />
           </View>
         </View>
@@ -211,14 +233,14 @@ const Bookshelf = () => {
           style={styles.bookshelfReceivedBooks}
           showsVerticalScrollIndicator={false}
         >
-          {receivedBooksData.length === 0 && !loading && (
+          {filteredBooks.length === 0 && !loading && (
             <View style={{ paddingVertical: 40, alignItems: "center" }}>
               <Text style={{ color: "#939393", fontSize: 16 }}>
-                No borrowed books
+                {searchDebounced ? t("bookshelf.t6") : t("bookshelf.t7")}
               </Text>
             </View>
           )}
-          {receivedBooksData.map((receivedBook) => {
+          {filteredBooks.map((receivedBook) => {
             const isOverdue =
               receivedBook.daysLeft !== null && receivedBook.daysLeft < 0;
             const daysLeftText = getDaysLeftText(receivedBook.dueDate);
@@ -246,10 +268,18 @@ const Bookshelf = () => {
                 <View style={styles.receivedBookContainerBlock2}>
                   <View style={styles.nameAuthorOfBookAndHeartIcon}>
                     <View style={styles.nameAndAuthorOfBook}>
-                      <Text style={styles.nameOfBook}>
+                      <Text
+                        style={styles.nameOfBook}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
                         {receivedBook.bookTitle || receivedBook.name || ""}
                       </Text>
-                      <Text style={styles.authorOfBook}>
+                      <Text
+                        style={styles.authorOfBook}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
                         {receivedBook.author}
                       </Text>
                     </View>
@@ -266,6 +296,8 @@ const Bookshelf = () => {
                         styles.daysLeft,
                         { color: isOverdue ? "#FF383C" : "#00A9FF" },
                       ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {daysLeftText}
                     </Text>
@@ -335,6 +367,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     borderRadius: 24,
     paddingLeft: 55,
+    height: 48,
   },
   sectionBookshelfComponent: {},
   bookshelfReceivedBooksScrollView: {
@@ -358,12 +391,16 @@ const styles = StyleSheet.create({
     elevation: 5,
     backgroundColor: "#fff",
     borderRadius: 12,
+    overflow: "hidden",
   },
   receivedBookContainerBlock1: {
     backgroundColor: "#767D7E",
     padding: 20,
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
+    width: 122,
+    justifyContent: "center",
+    alignItems: "center",
   },
   receivedBookImg: {
     width: 82,
@@ -373,6 +410,7 @@ const styles = StyleSheet.create({
   receivedBookContainerBlock2: {
     padding: 10,
     flex: 1,
+    justifyContent: "space-between",
   },
   nameAuthorOfBookAndHeartIcon: {
     flexDirection: "row",
@@ -380,16 +418,17 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   nameAndAuthorOfBook: {
-    justifyContent: "space-between",
     flex: 1,
+    marginRight: 10,
   },
   nameOfBook: {
-    fontSize: 22,
-    fontWeight: "500",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 4,
   },
   authorOfBook: {
     color: "#515151",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400",
   },
   heartIcon: {
@@ -405,6 +444,7 @@ const styles = StyleSheet.create({
   daysLeft: {
     fontSize: 12,
     fontWeight: "600",
+    flex: 1,
   },
   btnReturnBookBlock: {
     flexDirection: "row",

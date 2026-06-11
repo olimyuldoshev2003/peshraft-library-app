@@ -33,13 +33,18 @@ import { useAuth } from "@/context/AuthContext";
 
 const Feedback = () => {
   const navigation: any = useNavigation();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { t } = useTranslation();
 
   const [phoneError, setPhoneError] = useState("");
   const [detectedOperator, setDetectedOperator] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("tj");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get user data from auth context
+  const userFullName = userProfile?.fullName || currentUser?.displayName || "";
+  const userEmail = userProfile?.email || currentUser?.email || "";
+  const userImage = userProfile?.member_image_url || null;
 
   ////////////////////////////////////////////////////////////////////
   // Tajik SIM card prefixes and operators data
@@ -450,12 +455,20 @@ const Feedback = () => {
         <View style={styles.sectionFeedbackComponent}>
           <View style={styles.userImgFullnameAndEmailBlock}>
             <Image
-              source={require("../../assets/peshraft-library/profile/profile-img.jpg")}
+              source={
+                userImage
+                  ? { uri: userImage }
+                  : require("../../assets/peshraft-library/profile/profile-img.jpg")
+              }
               style={styles.userImg}
             />
             <View style={styles.userFullnameAndEmailBlock}>
-              <Text style={styles.userFullname}>Olim Yuldoshev</Text>
-              <Text style={styles.userEmail}>oyuldoshev39@gmail.com</Text>
+              <Text style={styles.userFullname}>
+                {userFullName || t("feedback.t32")}
+              </Text>
+              <Text style={styles.userEmail}>
+                {userEmail || t("feedback.t33")}
+              </Text>
             </View>
           </View>
 
@@ -472,14 +485,15 @@ const Feedback = () => {
               >
                 <Formik
                   initialValues={{
-                    phoneNumber: "",
-                    email: "",
+                    phoneNumber: userProfile?.phoneNumber || "",
+                    email: userEmail,
                     review: "",
                   }}
                   validationSchema={FeedbackSchema}
                   onSubmit={handleSubmit}
                   validateOnChange={true}
                   validateOnBlur={true}
+                  enableReinitialize={true}
                 >
                   {({
                     handleChange,
@@ -491,7 +505,7 @@ const Feedback = () => {
                     touched,
                     isValid,
                     dirty,
-                  }) => (
+                  }: any) => (
                     <View style={styles.labelsAndInputs}>
                       {/* Phone Number */}
                       <View
@@ -503,34 +517,6 @@ const Feedback = () => {
                         <Text style={[styles.label, styles.labelNumberPhone]}>
                           {t("feedback.t2")}
                         </Text>
-
-                        {/* Country Selector */}
-                        {/* <View style={styles.countrySelectorContainer}>
-                          <Selector
-                            options={COUNTRIES_DATA}
-                            selectedValue={selectedCountry}
-                            onValueChange={(countryCode) =>
-                              handleCountrySelect(countryCode, setFieldValue)
-                            }
-                            placeholder={t("feedback.t33")}
-                            searchable={true}
-                            primaryColor="#007AFF"
-                            customArrow={
-                              <Entypo
-                                name="chevron-thin-down"
-                                size={16}
-                                color="#666"
-                              />
-                            }
-                            searchPlaceholder=`${t("feedback.t34")}...`
-                            textStyle={{ color: "#000", fontSize: 14 }}
-                            style={styles.selectorStyle}
-                            optionStyle={styles.optionStyle}
-                            dropdownStyle={styles.dropdownStyle}
-                            searchInputStyle={styles.searchInputStyle}
-                            disabled={isSubmitting}
-                          />
-                        </View> */}
 
                         <View style={styles.phoneInputContainer}>
                           <TextInput
@@ -567,18 +553,6 @@ const Feedback = () => {
                         ) : phoneError ? (
                           <Text style={styles.errorText}>{phoneError}</Text>
                         ) : null}
-
-                        {/* {detectedOperator && (
-                          <Text style={styles.operatorText}>
-                            {t("feedback.t35")}: {detectedOperator}
-                          </Text>
-                        )} */}
-
-                        {/* <Text style={styles.phoneHint}>
-                          {selectedCountry === "tj"
-                            ? t("feedback.t36")
-                            : `${t("feedback.t37")}.`}
-                        </Text> */}
                       </View>
 
                       {/* Email */}
@@ -650,7 +624,7 @@ const Feedback = () => {
                         {/* Character counter */}
                         {values.review.length > 0 && (
                           <Text style={styles.charCounter}>
-                            {values.review.length}/1000 t("feedback.t38")
+                            {values.review.length}/1000 {t("feedback.t38")}
                           </Text>
                         )}
 
@@ -659,7 +633,7 @@ const Feedback = () => {
                         ) : values.review.length > 0 &&
                           values.review.length < 20 ? (
                           <Text style={styles.warningText}>
-                            {20 - values.review.length} t("feedback.t39")
+                            {20 - values.review.length} {t("feedback.t39")}
                           </Text>
                         ) : null}
                       </View>
@@ -749,7 +723,6 @@ const styles = StyleSheet.create({
   },
 
   formFeedbackScrollView: {
-    // flex:1,
     paddingBottom: 50,
   },
 

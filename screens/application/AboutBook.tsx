@@ -9,11 +9,13 @@ import {
   StyleSheet,
   Text,
   View,
+  Dimensions,
 } from "react-native";
 import { getAllBooks } from "@/firebase/mobile.services";
 import { useAppSelector } from "@/hooks/use-app-selector";
 import { useAppDispatch } from "@/hooks/use-app-dispatch";
-import { getBookById } from "@/api/api";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 const AboutBook = ({
   route,
@@ -37,7 +39,6 @@ const AboutBook = ({
   const loadingBookById = useAppSelector(
     (state: any) => state.peshraftLibraryState.loadingBookById,
   );
-
 
   // Load other books for recommendations
   useEffect(() => {
@@ -64,7 +65,7 @@ const AboutBook = ({
   if (!bookById || bookById.id !== bookId) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={{ color: "#999" }}>No book found</Text>
+        <Text style={{ color: "#999" }}>{t("aboutBook.t2")}</Text>
       </View>
     );
   }
@@ -78,18 +79,18 @@ const AboutBook = ({
       >
         <View style={styles.aboutBookBlock}>
           <Text style={styles.aboutBook}>
-            {bookById?.description || "No description available."}
+            {bookById?.description || `${t("aboutBook.t3")}.`}
           </Text>
           {bookById && (
             <View style={{ marginTop: 12, gap: 4 }}>
               <Text style={styles.infoText}>
-                📅 Year: {bookById.year || "-"}
+                📅 {t("aboutBook.t4")}: {bookById.year || "-"}
               </Text>
               <Text style={styles.infoText}>
-                🌐 Language: {bookById.language || "-"}
+                🌐 {t("aboutBook.t5")}: {bookById.language || "-"}
               </Text>
               <Text style={styles.infoText}>
-                📚 Available copies: {bookById.available_copies ?? "-"}
+                📚 {t("aboutBook.t6")}: {bookById.available_copies ?? "-"}
               </Text>
             </View>
           )}
@@ -118,7 +119,13 @@ const AboutBook = ({
                     }
                     style={styles.otherBookImg}
                   />
-                  <Text style={styles.otherBookName}>{b.title}</Text>
+                  <Text
+                    style={styles.otherBookName}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {b.title}
+                  </Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -140,11 +147,31 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 15, color: "#555", fontWeight: "400" },
   otherBooksContainer: { marginTop: 10 },
   titleOtherBooks: { fontSize: 21, fontWeight: "500" },
-  otherBooksBlockScrollView: { marginTop: 10, flexDirection: "row", gap: 10 },
+  otherBooksBlockScrollView: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 10,
+    paddingRight: 10,
+  },
   otherBooksBlock: {},
-  otherBookImgAndName: { gap: 5 },
-  otherBookImg: { width: 95, height: 145, borderRadius: 8 },
-  otherBookName: { textAlign: "center", fontSize: 15, fontWeight: "400" },
+  otherBookImgAndName: {
+    gap: 5,
+    width: 95,
+    alignItems: "center",
+  },
+  otherBookImg: {
+    width: 95,
+    height: 145,
+    borderRadius: 8,
+  },
+  otherBookName: {
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "500",
+    width: 95,
+    maxWidth: 95,
+    color: "#333",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",

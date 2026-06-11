@@ -21,7 +21,9 @@
     "t2": "Duetime",
     "t3": "News",
     "t4": "Yesterday",
-    "t5": "Today"
+    "t5": "Today",
+    "t6": "No duetime notifications",
+    "t7": "No news notifications"
   },
   "modalSearchHome": {
     "t1": "Search Here",
@@ -47,7 +49,12 @@
     "t5": "Receive a book"
   },
   "aboutBook": {
-    "t1": "You may like this"
+    "t1": "You may like this",
+    "t2": "No book found",
+    "t3": "No description available",
+    "t4": "Year",
+    "t5": "Language",
+    "t6": "Available copies"
   },
   "reviewBook": {
     "t1": "Reviews",
@@ -112,12 +119,15 @@
     "t2": "Search Here",
     "t3": "day left",
     "t4": "days left",
-    "t5": "Return the book"
+    "t5": "Return the book",
+    "t6": "No books found",
+    "t7": "No borrowed books"
   },
   "favoriteBooks": {
     "t1": "My favorite books",
     "t2": "reader",
-    "t3": "readers"
+    "t3": "readers",
+    "t4": "No favorite books yet"
   },
   "profile": {
     "t1": "My Profile",
@@ -261,7 +271,9 @@
     "t105": "One number",
     "t106": "One special character",
     "t107": "Tips to improve",
-    "t108": "Passwords match"
+    "t108": "Passwords match",
+
+    "t109": "No user profile found"
   },
   "historyBook": {
     "t1": "History",

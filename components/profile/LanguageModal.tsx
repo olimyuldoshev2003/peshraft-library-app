@@ -20,49 +20,79 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
   const [languages, setLanguages] = useState([
     {
       id: 1,
-      name: "English",
-      value: "en",
-      flag: require("../../assets/peshraft-library/profile/en-lang.jpg"),
-      searchTerms: ["english", "английский", "англисӣ"],
-    },
-    {
-      id: 2,
-      name: "Russian",
+      name: "Русский",
       value: "ru",
       flag: require("../../assets/peshraft-library/profile/ru-lang.jpg"),
       searchTerms: ["russian", "русский", "русӣ"],
     },
     {
-      id: 3,
-      name: "Tajik",
+      id: 2,
+      name: "Тоҷикӣ",
       value: "tj",
       flag: require("../../assets/peshraft-library/profile/tj-lang.jpg"),
       searchTerms: ["tajik", "таджикский", "тоҷикӣ"],
     },
+    {
+      id: 3,
+      name: "English",
+      value: "en",
+      flag: require("../../assets/peshraft-library/profile/en-lang.jpg"),
+      searchTerms: ["english", "английский", "англисӣ"],
+    },
   ]);
 
+  useEffect(() => {
+    // Load saved language from storage or use device default
+    const loadSavedLanguage = async () => {
+      try {
+        const savedLanguage = await i18n.language;
+        if (savedLanguage) {
+          let langValue = savedLanguage;
+          let langName = "English";
+
+          if (savedLanguage === "ru") {
+            langName = "Русский";
+          } else if (savedLanguage === "tj") {
+            langName = "Тоҷикӣ";
+          } else {
+            langName = "English";
+            langValue = "en";
+          }
+
+          setSelectedLanguage(langName);
+          setSelectedLanguageValue(langValue);
+        }
+      } catch (error) {
+        console.error("Error loading saved language:", error);
+      }
+    };
+
+    loadSavedLanguage();
+  }, []);
+
+  // Update languages when translation changes
   useEffect(() => {
     setLanguages([
       {
         id: 1,
-        name: t("language.en"),
-        value: "en",
-        flag: require("../../assets/peshraft-library/profile/en-lang.jpg"),
-        searchTerms: ["english", "английский", "англисӣ"],
-      },
-      {
-        id: 2,
         name: t("language.ru"),
         value: "ru",
         flag: require("../../assets/peshraft-library/profile/ru-lang.jpg"),
         searchTerms: ["russian", "русский", "русӣ"],
       },
       {
-        id: 3,
+        id: 2,
         name: t("language.tj"),
         value: "tj",
         flag: require("../../assets/peshraft-library/profile/tj-lang.jpg"),
         searchTerms: ["tajik", "таджикский", "тоҷикӣ"],
+      },
+      {
+        id: 3,
+        name: t("language.en"),
+        value: "en",
+        flag: require("../../assets/peshraft-library/profile/en-lang.jpg"),
+        searchTerms: ["english", "английский", "англисӣ"],
       },
     ]);
   }, [t]);
@@ -93,55 +123,47 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
       // Change language using i18n instance
       await i18n.changeLanguage(languageValue);
 
-      // Get language names for the alert message
-      const languageNames = {
-        en: "English",
-        ru: "Russian",
-        tj: "Tajik",
-      };
-
-      // Get the translated message based on the selected language
+      // Get translated alert messages based on the selected language
       let alertMessage = "";
-      const langName =
-        languageNames[languageValue as keyof typeof languageNames];
 
       switch (languageValue) {
         case "en":
-          alertMessage = `Language changed to ${langName.toLowerCase()}`;
+          alertMessage = "Language changed to English";
           break;
         case "ru":
-          alertMessage = `Язык изменен на ${
-            langName === "Russian"
-              ? "русский"
-              : langName === "English"
-                ? "английский"
-                : "таджикский"
-          }`;
+          alertMessage = "Язык изменен на русский";
           break;
         case "tj":
-          alertMessage = `Забон ба ${
-            langName === "Tajik"
-              ? "тоҷикӣ"
-              : langName === "English"
-                ? "англисӣ"
-                : "русӣ"
-          } иваз карда шуд`;
+          alertMessage = "Забон ба тоҷикӣ иваз карда шуд";
           break;
         default:
-          alertMessage = `Language changed to ${langName}`;
+          alertMessage = `Language changed to ${languageName}`;
       }
 
       // Show alert message
       Alert.alert(alertMessage);
 
-      // console.log("Applied language:", languageName);
-      // console.log("Applied language value:", languageValue);
-
       // Close modal after language change
       closeLanguageModal();
     } catch (error) {
       console.error("Error changing language:", error);
-      Alert.alert("Error", "Failed to change language");
+      let errorMessage = "";
+
+      switch (i18n.language) {
+        case "en":
+          errorMessage = "Failed to change language";
+          break;
+        case "ru":
+          errorMessage = "Не удалось изменить язык";
+          break;
+        case "tj":
+          errorMessage = "Забонро иваз кардан муяссар нашуд";
+          break;
+        default:
+          errorMessage = "Failed to change language";
+      }
+
+      Alert.alert(errorMessage);
     }
   };
 

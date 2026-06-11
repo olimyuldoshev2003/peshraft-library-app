@@ -25,14 +25,15 @@ import {
   View,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useAppSelector } from "@/hooks/use-app-selector";
+import { refreshFavoriteBooks, toggleFavoriteBook } from "@/api/api";
+import { useAppDispatch } from "@/hooks/use-app-dispatch";
 
 const Home = () => {
   const navigation: any = useNavigation();
-
-  
 
   const [modalSearch, setModalSearch] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,6 +44,7 @@ const Home = () => {
   const [booksError, setBooksError] = useState<string | null>(null);
 
   const { t } = useTranslation();
+  const dispatch = useAppDispatch();
   const { currentUser, userProfile } = useAuth();
   const [receivedBooks, setReceivedBooks] = useState<any[]>([]);
   const [receivedBooksLoading, setReceivedBooksLoading] =
@@ -53,6 +55,16 @@ const Home = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
 
+  // Track favorite status for books
+  const [favoriteStatusMap, setFavoriteStatusMap] = useState<
+    Map<string, boolean>
+  >(new Map());
+
+  // Get favorite books from Redux store
+  const favoriteBooksFromStore = useAppSelector(
+    (state) => state.peshraftLibraryState.favoriteBooks,
+  );
+
   // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -60,6 +72,17 @@ const Home = () => {
     }, 300);
     return () => clearTimeout(handler);
   }, [searchValue]);
+
+  // Update favorite status map whenever favorite books change
+  useEffect(() => {
+    if (favoriteBooksFromStore) {
+      const newMap = new Map<string, boolean>();
+      favoriteBooksFromStore.forEach((fav: any) => {
+        newMap.set(fav.bookId, true);
+      });
+      setFavoriteStatusMap(newMap);
+    }
+  }, [favoriteBooksFromStore]);
 
   // Memoize filtered books for performance
   const filteredBooks = useMemo(() => {
@@ -183,6 +206,36 @@ const Home = () => {
     }
   }
 
+  // Handle toggle favorite from home screen
+  const handleToggleFavorite = async (bookId: string) => {
+    if (!currentUser?.uid) {
+      Alert.alert("Error", "Please login to add favorites");
+      return;
+    }
+
+    try {
+      const result = await dispatch(
+        toggleFavoriteBook({ uid: currentUser.uid, bookId }),
+      ).unwrap();
+
+      // Update local favorite status map immediately for UI feedback
+      setFavoriteStatusMap((prev) => {
+        const newMap = new Map(prev);
+        if (result.isFavorite) {
+          newMap.set(bookId, true);
+        } else {
+          newMap.delete(bookId);
+        }
+        return newMap;
+      });
+
+      // Refresh favorite books list in the background
+      await dispatch(refreshFavoriteBooks(currentUser.uid));
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     loadAllBooks();
@@ -209,11 +262,24 @@ const Home = () => {
         loadCategories(),
         loadReceivedBooks(),
       ]);
+      // Refresh favorites as well
+      if (currentUser?.uid) {
+        await dispatch(refreshFavoriteBooks(currentUser.uid));
+      }
     } catch (e) {
       console.error("Refresh error:", e);
     }
     setRefreshing(false);
   }, [activeCategory, currentUser?.uid]);
+
+  // Refresh favorite books when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (currentUser?.uid) {
+        dispatch(refreshFavoriteBooks(currentUser.uid));
+      }
+    }, [currentUser?.uid]),
+  );
 
   // Memoize render for received book item
   const renderReceivedBook = useCallback(
@@ -300,78 +366,90 @@ const Home = () => {
     [navigation, t],
   );
 
-  // Memoize render for book item
+  // Memoize render for book item with favorite indicator
   const renderBookItem = useCallback(
-    (book: any) => (
-      <Pressable
-        key={book.id}
-        style={styles.bookContainer}
-        onPress={() => navigation.navigate("Book", { id: book.id })}
-      >
-        <View style={styles.bookContainerBlock1}>
-          <FontAwesome
-            name="heart-o"
-            size={20}
-            color="#939393"
-            style={styles.heartIcon}
-          />
-          <Image
-            source={
-              book.image_url
-                ? { uri: book.image_url }
-                : require("../../assets/peshraft-library/home/tojikon.jpg")
-            }
-            style={styles.bookImg}
-          />
-        </View>
-        <View style={styles.bookContainerBlock2}>
-          <View style={styles.nameAndAuthorAndRateOfBookBlock}>
-            <View style={styles.nameAndAuthorOfBookBlock}>
-              <Text style={styles.nameOfBook} numberOfLines={1}>
-                {book.title || "-"}
-              </Text>
-              <Text style={styles.authorOfBook} numberOfLines={1}>
-                {book.author || ""}
-              </Text>
-            </View>
-            <View style={styles.rateOfBookBlock}>
-              <Entypo
-                name="star"
-                size={13}
-                color="orange"
-                style={styles.rateStarIcon}
+    (book: any) => {
+      const isFavorite = favoriteStatusMap.get(book.id) || false;
+
+      return (
+        <Pressable
+          key={book.id}
+          style={styles.bookContainer}
+          onPress={() => navigation.navigate("Book", { id: book.id })}
+        >
+          <View style={styles.bookContainerBlock1}>
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                handleToggleFavorite(book.id);
+              }}
+              style={styles.heartIconButton}
+            >
+              <FontAwesome
+                name={isFavorite ? "heart" : "heart-o"}
+                size={20}
+                color={isFavorite ? "red" : "#939393"}
+                style={styles.heartIcon}
               />
-              <Text style={styles.rateInNumber}>{book.rating || "0"}</Text>
-            </View>
+            </Pressable>
+            <Image
+              source={
+                book.image_url
+                  ? { uri: book.image_url }
+                  : require("../../assets/peshraft-library/home/tojikon.jpg")
+              }
+              style={styles.bookImg}
+            />
           </View>
-          <View style={styles.numberOfReadersAndForwardIconBlock}>
-            <View style={styles.userIconNumberOfReadersAndTextBlock}>
-              <Feather
-                name="users"
-                size={24}
-                color="#939393"
-                style={styles.userIcon}
-              />
-              <View style={styles.numberAndTextReadersBlock}>
-                <Text style={styles.numberOfReaders}>
-                  {book.readers || "0"}
+          <View style={styles.bookContainerBlock2}>
+            <View style={styles.nameAndAuthorAndRateOfBookBlock}>
+              <View style={styles.nameAndAuthorOfBookBlock}>
+                <Text style={styles.nameOfBook} numberOfLines={1}>
+                  {book.title || "-"}
                 </Text>
-                <Text style={styles.titleOfReaders}>{t("home.t8")}</Text>
+                <Text style={styles.authorOfBook} numberOfLines={1}>
+                  {book.author || ""}
+                </Text>
+              </View>
+              <View style={styles.rateOfBookBlock}>
+                <Entypo
+                  name="star"
+                  size={13}
+                  color="orange"
+                  style={styles.rateStarIcon}
+                />
+                <Text style={styles.rateInNumber}>{book.rating || "0"}</Text>
               </View>
             </View>
-            <View style={styles.forwardIconBlock}>
-              <FontAwesome6
-                name="arrow-right-long"
-                size={13}
-                color="black"
-                style={styles.forwardIcon}
-              />
+            <View style={styles.numberOfReadersAndForwardIconBlock}>
+              <View style={styles.userIconNumberOfReadersAndTextBlock}>
+                <Feather
+                  name="users"
+                  size={24}
+                  color="#939393"
+                  style={styles.userIcon}
+                />
+                <View style={styles.numberAndTextReadersBlock}>
+                  <Text style={styles.numberOfReaders}>
+                    {book.readers || "0"}
+                  </Text>
+                  <Text style={styles.titleOfReaders}>{t("home.t8")}</Text>
+                </View>
+              </View>
+              <View style={styles.forwardIconBlock}>
+                <FontAwesome6
+                  name="arrow-right-long"
+                  size={13}
+                  color="black"
+                  style={styles.forwardIcon}
+                />
+              </View>
             </View>
           </View>
-        </View>
-      </Pressable>
-    ),
-    [navigation, t],
+        </Pressable>
+      );
+    },
+    [navigation, t, favoriteStatusMap],
   );
 
   return (
@@ -854,11 +932,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 200,
   },
-  heartIcon: {
+  heartIconButton: {
     position: "absolute",
     top: 8,
     right: 8,
-    zIndex: 1,
+    zIndex: 10,
+    padding: 5,
+  },
+  heartIcon: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 1,
   },
   bookImg: {
     width: 100,

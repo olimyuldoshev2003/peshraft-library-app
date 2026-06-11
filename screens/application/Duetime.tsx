@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { getDuetimeNotifications } from "@/firebase/mobile.services";
+import { useTranslation } from "react-i18next";
 
 const Duetime = () => {
   const { currentUser } = useAuth();
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -25,9 +34,15 @@ const Duetime = () => {
           style={styles.duetimeNotifications}
           showsVerticalScrollIndicator={false}
         >
-          {loading && <ActivityIndicator size="large" color="#00A9FF" style={{ marginTop: 30 }} />}
+          {loading && (
+            <ActivityIndicator
+              size="large"
+              color="#00A9FF"
+              style={{ marginTop: 30 }}
+            />
+          )}
           {!loading && notifications.length === 0 && (
-            <Text style={styles.emptyText}>No duetime notifications</Text>
+            <Text style={styles.emptyText}>{t("notifications.t6")}</Text>
           )}
           {!loading && notifications.length > 0 && (
             <View style={styles.duetimeNotificationsContainer}>
@@ -44,10 +59,18 @@ const Duetime = () => {
                       style={styles.duetimeNotificationImg}
                     />
                   )}
-                  <View style={styles.duetimeNotificationTitleAndDescriptionBlock}>
-                    <Text style={styles.duetimeNotificationTitle}>{notif.title}</Text>
-                    <Text style={styles.duetimeNotificationDescription}>{notif.description}</Text>
-                    <Text style={styles.duetimeNotificationTime}>{notif.time || notif.date || ""}</Text>
+                  <View
+                    style={styles.duetimeNotificationTitleAndDescriptionBlock}
+                  >
+                    <Text style={styles.duetimeNotificationTitle}>
+                      {notif.title}
+                    </Text>
+                    <Text style={styles.duetimeNotificationDescription}>
+                      {notif.description}
+                    </Text>
+                    <Text style={styles.duetimeNotificationTime}>
+                      {notif.time || notif.date || ""}
+                    </Text>
                   </View>
                 </View>
               ))}
@@ -67,15 +90,38 @@ const styles = StyleSheet.create({
   duetimeNotificationsScrollView: { paddingHorizontal: 7, paddingBottom: 55 },
   duetimeNotifications: {},
   duetimeNotificationsContainer: { marginTop: 15, gap: 15 },
-  emptyText: { textAlign: "center", color: "#9E9E9E", fontSize: 18, marginTop: 40 },
-  duetimeNotification: {
-    borderRadius: 20, backgroundColor: "#fff",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5,
+  emptyText: {
+    textAlign: "center",
+    color: "#9E9E9E",
+    fontSize: 18,
+    marginTop: 40,
   },
-  duetimeNotificationImg: { width: "100%", height: 95, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  duetimeNotification: {
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  duetimeNotificationImg: {
+    width: "100%",
+    height: 95,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
   duetimeNotificationTitleAndDescriptionBlock: { padding: 15, gap: 6 },
   duetimeNotificationTitle: { fontSize: 25, fontWeight: "700", color: "#000" },
-  duetimeNotificationDescription: { fontSize: 18, fontWeight: "400", color: "#000" },
-  duetimeNotificationTime: { fontSize: 14, fontWeight: "400", color: "#9E9E9E", textAlign: "right" },
+  duetimeNotificationDescription: {
+    fontSize: 18,
+    fontWeight: "400",
+    color: "#000",
+  },
+  duetimeNotificationTime: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#9E9E9E",
+    textAlign: "right",
+  },
 });

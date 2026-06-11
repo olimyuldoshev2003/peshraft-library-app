@@ -23,6 +23,33 @@ interface Review {
   createdAt: any;
 }
 
+// Helper function to compute book stats (used internally)
+const computeBookStatsHelper = async (bookId: string) => {
+  try {
+    const [reviewsSnap, borrowsSnap] = await Promise.all([
+      getDocs(query(collection(db, "reviews"), where("bookId", "==", bookId))),
+      getDocs(query(collection(db, "borrows"), where("bookId", "==", bookId))),
+    ]);
+
+    const ratings = reviewsSnap.docs.map((d: any) => d.data().rating || 0);
+    const avgRating = ratings.length
+      ? Math.round(
+          (ratings.reduce((a: number, b: number) => a + b, 0) /
+            ratings.length) *
+            10,
+        ) / 10
+      : 0;
+
+    return {
+      rating: avgRating,
+      readers: borrowsSnap.size,
+      bookId,
+    };
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to compute book stats");
+  }
+};
+
 // Get book reviews async thunk with serialized timestamp
 export const getBookReviews = createAsyncThunk(
   "reviews/getBookReviews",
@@ -47,7 +74,7 @@ export const getBookReviews = createAsyncThunk(
           review_date, // Now this is a serializable string
         };
       });
-        
+
       return reviews as Review[];
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch book reviews");
@@ -107,29 +134,7 @@ export const computeBookStats = createAsyncThunk(
   "books/computeBookStats",
   async (bookId: string, { rejectWithValue }) => {
     try {
-      const [reviewsSnap, borrowsSnap] = await Promise.all([
-        getDocs(
-          query(collection(db, "reviews"), where("bookId", "==", bookId)),
-        ),
-        getDocs(
-          query(collection(db, "borrows"), where("bookId", "==", bookId)),
-        ),
-      ]);
-
-      const ratings = reviewsSnap.docs.map((d: any) => d.data().rating || 0);
-      const avgRating = ratings.length
-        ? Math.round(
-            (ratings.reduce((a: number, b: number) => a + b, 0) /
-              ratings.length) *
-              10,
-          ) / 10
-        : 0;
-
-      return {
-        rating: avgRating,
-        readers: borrowsSnap.size,
-        bookId,
-      };
+      return await computeBookStatsHelper(bookId);
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to compute book stats");
     }
@@ -138,12 +143,15 @@ export const computeBookStats = createAsyncThunk(
 
 export const getAllBooks = createAsyncThunk(
   "books/getAllBooks",
-  async (categoryFilter?: string, { rejectWithValue }) => {
+  async (
+    { categoryFilter }: { categoryFilter?: string } = {},
+    { rejectWithValue },
+  ) => {
     try {
       const snap = await getDocs(collection(db, "books"));
       let books = snap.docs.map((doc: any) => {
         const data = doc.data();
-        
+
         // Serialize any timestamp fields in the book data
         let createdAt = data.createdAt;
         if (createdAt && typeof createdAt.toDate === "function") {
@@ -151,47 +159,79 @@ export const getAllBooks = createAsyncThunk(
         } else if (createdAt && createdAt.seconds) {
           createdAt = new Date(createdAt.seconds * 1000).toISOString();
         }
-        
-        return { 
-          id: doc.id, 
+
+        return {
+          id: doc.id,
           ...data,
-          createdAt
+          createdAt,
         };
       });
-      
+
       // Apply category filter if provided
       if (categoryFilter && categoryFilter !== "All") {
         books = books.filter((b: any) => b.category === categoryFilter);
       }
-      
-      // Enrich each book with live rating and readers count
+
+      // Enrich each book with live rating and readers count using the helper function
       const enriched = await Promise.all(
         books.map(async (b: any) => {
-          const stats:any = await computeBookStats(b.id);
+          const stats = await computeBookStatsHelper(b.id);
           return { ...b, rating: stats.rating, readers: stats.readers };
-        })
+        }),
       );
-      
+
       return enriched;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch all books");
     }
-  }
+  },
+);
+
+// Add this to your existing api.ts file
+export const refreshFavoriteBooks = createAsyncThunk(
+  "favorites/refreshFavoriteBooks",
+  async (uid: string, { rejectWithValue }) => {
+    try {
+      const q = query(collection(db, "favoriteBooks"), where("uid", "==", uid));
+      const snap = await getDocs(q);
+      const favorites = snap.docs.map((doc: any) => {
+        const data = doc.data();
+
+        // Convert Firestore Timestamp to serializable format
+        let createdAt = data.createdAt;
+        if (createdAt && typeof createdAt.toDate === "function") {
+          createdAt = createdAt.toDate().toISOString();
+        } else if (createdAt && createdAt.seconds) {
+          createdAt = new Date(createdAt.seconds * 1000).toISOString();
+        }
+
+        return {
+          id: doc.id,
+          ...data,
+          createdAt,
+        };
+      });
+      return favorites;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.message || "Failed to refresh favorite books",
+      );
+    }
+  },
 );
 
 // Get book by id with stats
 export const getBookById = createAsyncThunk(
   "books/getBookById",
-  async (bookId: string, { rejectWithValue, dispatch }) => {
+  async (bookId: string, { rejectWithValue }) => {
     try {
       const docSnap = await getDoc(doc(db, "books", bookId));
       if (!docSnap.exists()) {
         return null;
       }
 
-      // Get stats using the computeBookStats thunk
-      const stats = await dispatch(computeBookStats(bookId)).unwrap();
-      console.log(stats);
+      // Get stats using the helper function
+      const stats = await computeBookStatsHelper(bookId);
 
       const bookData = docSnap.data();
 
@@ -289,19 +329,15 @@ export const isBookFavorite = createAsyncThunk(
   },
 );
 
-
 export const getFavoriteBooks = createAsyncThunk(
   "favorites/getFavoriteBooks",
   async (uid: string, { rejectWithValue }) => {
     try {
-      const q = query(
-        collection(db, "favoriteBooks"),
-        where("uid", "==", uid)
-      );
+      const q = query(collection(db, "favoriteBooks"), where("uid", "==", uid));
       const snap = await getDocs(q);
       const favorites = snap.docs.map((doc: any) => {
         const data = doc.data();
-        
+
         // Convert Firestore Timestamp to serializable format
         let createdAt = data.createdAt;
         if (createdAt && typeof createdAt.toDate === "function") {
@@ -309,16 +345,16 @@ export const getFavoriteBooks = createAsyncThunk(
         } else if (createdAt && createdAt.seconds) {
           createdAt = new Date(createdAt.seconds * 1000).toISOString();
         }
-        
-        return { 
-          id: doc.id, 
+
+        return {
+          id: doc.id,
           ...data,
-          createdAt // Now this is a serializable string
+          createdAt, // Now this is a serializable string
         };
       });
       return favorites;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch favorite books");
     }
-  }
+  },
 );

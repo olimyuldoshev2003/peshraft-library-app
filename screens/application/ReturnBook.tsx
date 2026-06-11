@@ -72,7 +72,7 @@ const ReturnBook = ({ route }: { route?: any }) => {
               Alert.alert(
                 "Return Request Sent!",
                 "The admin will process your return request. Your bookshelf will update once approved.",
-                [{ text: "OK", onPress: () => navigation.navigate("Bookshelf") }]
+                [{ text: "OK", onPress: () => navigation.navigate("Home") }]
               );
             } catch (error: any) {
               Alert.alert("Error", error.message || "Something went wrong.");

@@ -40,6 +40,9 @@ const EditUser = () => {
   const [userImage, setUserImage] = useState<string | null>(
     userProfile?.member_image_url || null,
   );
+  const [originalUserImage, setOriginalUserImage] = useState<string | null>(
+    userProfile?.member_image_url || null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [showAndHidePassword, setShowAndHidePassword] = useState(false);
   const [showAndHideConfirmPassword, setShowAndHideConfirmPassword] =
@@ -52,6 +55,7 @@ const EditUser = () => {
     feedback: string[];
   }>({ score: 0, feedback: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasImageChanged, setHasImageChanged] = useState(false);
 
   ////////////////////////////////////////////////////////////////////////
   // Tajik SIM card prefixes and operators data
@@ -704,7 +708,7 @@ const EditUser = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: any, { resetForm }: any) => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
@@ -720,7 +724,18 @@ const EditUser = () => {
       };
 
       // 🔥 Real Firebase update
-      if (!userProfile?.id) throw new Error("No user profile found");
+      if (!userProfile?.id) throw new Error(t("editProfile.t109"));
+
+      let imageToUpdate = undefined;
+      if (
+        hasImageChanged &&
+        userImage &&
+        typeof userImage === "string" &&
+        userImage.startsWith("file")
+      ) {
+        imageToUpdate = userImage;
+      }
+
       await updateUserProfile(
         userProfile.id,
         {
@@ -729,7 +744,7 @@ const EditUser = () => {
           phoneNumber: userData.phoneNumber,
           email: userData.email,
         },
-        userImage && typeof userImage === "string" && userImage.startsWith("file") ? userImage : undefined
+        imageToUpdate,
       );
       await refreshProfile();
 
@@ -741,6 +756,11 @@ const EditUser = () => {
           },
         },
       ]);
+
+      // Reset the form with new values to reset dirty state
+      resetForm({ values });
+      setHasImageChanged(false);
+      setOriginalUserImage(userImage);
     } catch (error) {
       Alert.alert(`${t("editProfile.t61")}`, `${t("editProfile.t62")}`, [
         { text: "OK" },
@@ -792,6 +812,7 @@ const EditUser = () => {
         }
 
         setUserImage(selectedImage.uri);
+        setHasImageChanged(true);
         Alert.alert(`${t("editProfile.t69")}`, `${t("editProfile.t70")}`, [
           { text: "OK" },
         ]);
@@ -826,6 +847,7 @@ const EditUser = () => {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const takenPhoto = result.assets[0];
         setUserImage(takenPhoto.uri);
+        setHasImageChanged(true);
         Alert.alert(`${t("editProfile.t69")}`, `${t("editProfile.t70")}`, [
           { text: "OK" },
         ]);
@@ -871,7 +893,7 @@ const EditUser = () => {
             setUserImage(
               require("../../assets/peshraft-library/profile/profile-img.jpg"),
             );
-
+            setHasImageChanged(true);
             Alert.alert(`${t("editProfile.t69")}`, `${t("editProfile.t87")}`);
           },
         },
@@ -996,6 +1018,7 @@ const EditUser = () => {
                 onSubmit={handleSubmit}
                 validateOnChange={true}
                 validateOnBlur={true}
+                enableReinitialize={true}
               >
                 {({
                   handleChange,
@@ -1007,515 +1030,193 @@ const EditUser = () => {
                   touched,
                   isValid,
                   dirty,
-                }) => (
-                  <View style={styles.labelsAndInputsBlock}>
-                    {/* Full Name */}
-                    <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputFullnameBlock,
-                      ]}
-                    >
-                      <Text style={[styles.label, styles.labelFullname]}>
-                        {t("editProfile.t3")}
-                      </Text>
-                      <TextInput
+                }) => {
+                  // Check if any field has changed from initial values
+                  const hasFormChanges = dirty;
+                  const isSaveDisabled =
+                    !isValid ||
+                    (!hasFormChanges && !hasImageChanged) ||
+                    isSubmitting;
+
+                  return (
+                    <View style={styles.labelsAndInputsBlock}>
+                      {/* Full Name */}
+                      <View
                         style={[
-                          styles.input,
-                          styles.inputFullname,
-                          errors.fullName &&
-                            touched.fullName &&
-                            styles.inputError,
-                          touched.fullName &&
-                            !errors.fullName &&
-                            styles.inputSuccess,
+                          styles.labelAndInputBlock,
+                          styles.labelAndInputFullnameBlock,
                         ]}
-                        onChangeText={handleChange("fullName")}
-                        onBlur={handleBlur("fullName")}
-                        value={values.fullName}
-                        placeholder={t("editProfile.t4")}
-                        returnKeyType="next"
-                        editable={!isSubmitting}
-                      />
-                      {errors.fullName && touched.fullName && (
-                        <Text style={styles.errorText}>{String(errors.fullName)}</Text>
-                      )}
-                    </View>
-
-                    {/* Date of Birth */}
-                    <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputBirthDateBlock,
-                      ]}
-                    >
-                      <Text style={[styles.label, styles.labelBirthDate]}>
-                        {t("editProfile.t5")}
-                      </Text>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          styles.inputBirthDate,
-                          errors.dateOfBirth &&
-                            touched.dateOfBirth &&
-                            styles.inputError,
-                          touched.dateOfBirth &&
-                            !errors.dateOfBirth &&
-                            styles.inputSuccess,
-                        ]}
-                        onChangeText={(text) =>
-                          handleDateOfBirthChange(text, setFieldValue)
-                        }
-                        onBlur={handleBlur("dateOfBirth")}
-                        value={values.dateOfBirth}
-                        placeholder={t("editProfile.t6")}
-                        keyboardType="numeric"
-                        returnKeyType="next"
-                        editable={!isSubmitting}
-                      />
-                      {errors.dateOfBirth && touched.dateOfBirth && (
-                        <Text style={styles.errorText}>
-                          {String(errors.dateOfBirth)}
-                        </Text>
-                      )}
-                    </View>
-
-                    {/* Job Title */}
-                    {/* <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputJobTitleBlock,
-                      ]}
-                    >
-                      <Text style={[styles.label, styles.labelJobTitle]}>
-                        {t("editProfile.t7")}
-                      </Text>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          styles.inputJobTitle,
-                          errors.jobTitle &&
-                            touched.jobTitle &&
-                            styles.inputError,
-                          touched.jobTitle &&
-                            !errors.jobTitle &&
-                            styles.inputSuccess,
-                        ]}
-                        onChangeText={handleChange("jobTitle")}
-                        onBlur={handleBlur("jobTitle")}
-                        value={values.jobTitle}
-                        placeholder={t("editProfile.t8")}
-                        returnKeyType="next"
-                        editable={!isSubmitting}
-                      />
-                      {errors.jobTitle && touched.jobTitle && (
-                        <Text style={styles.errorText}>{String(errors.jobTitle)}</Text>
-                      )}
-                    </View> */}
-
-                    {/* Phone Number */}
-                    <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputPhoneNumberBlock,
-                      ]}
-                    >
-                      <Text style={[styles.label, styles.labelPhoneNumber]}>
-                        {t("editProfile.t9")}
-                      </Text>
-
-                      {/* Country Selector */}
-                      {/* <View style={styles.countrySelectorContainer}>
-                        <Selector
-                          options={COUNTRIES_DATA}
-                          selectedValue={selectedCountry}
-                          onValueChange={(countryCode) =>
-                            handleCountrySelect(countryCode, setFieldValue)
-                          }
-                          placeholder={t("editProfile.t91")}
-                          searchable={true}
-                          primaryColor="#007AFF"
-                          customArrow={
-                            <Entypo
-                              name="chevron-thin-down"
-                              size={16}
-                              color="#666"
-                            />
-                          }
-                          searchPlaceholder={t("editProfile.t92")}
-                          textStyle={{ color: "#000", fontSize: 14 }}
-                          style={styles.selectorStyle}
-                          optionStyle={styles.optionStyle}
-                          dropdownStyle={styles.dropdownStyle}
-                          searchInputStyle={styles.searchInputStyle}
-                          disabled={isSubmitting}
-                        />
-                      </View> */}
-
-                      <View style={styles.phoneInputContainer}>
-                        {/* <FontAwesome
-                      name="phone"
-                      size={20}
-                      color="black"
-                      style={styles.phoneIcon}
-                    /> */}
-                        <TextInput
-                          style={[
-                            styles.input,
-                            styles.inputPhoneNumber,
-                            styles.phoneInput,
-                            (errors.phoneNumber && touched.phoneNumber) ||
-                            phoneError
-                              ? styles.inputError
-                              : null,
-                            touched.phoneNumber &&
-                              !errors.phoneNumber &&
-                              !phoneError &&
-                              styles.inputSuccess,
-                          ]}
-                          onChangeText={(text) =>
-                            handlePhoneChange(text, setFieldValue)
-                          }
-                          onBlur={handleBlur("phoneNumber")}
-                          value={values.phoneNumber}
-                          placeholder="+992 93 123 4567"
-                          keyboardType="phone-pad"
-                          returnKeyType="next"
-                          editable={!isSubmitting}
-                        />
-                      </View>
-
-                      {errors.phoneNumber && touched.phoneNumber ? (
-                        <Text style={styles.errorText}>
-                          {String(errors.phoneNumber)}
-                        </Text>
-                      ) : phoneError ? (
-                        <Text style={styles.errorText}>{phoneError}</Text>
-                      ) : null}
-
-                      {/* {detectedOperator && (
-                        <Text style={styles.operatorText}>
-                          {t("editProfile.t93")}: {detectedOperator}
-                        </Text>
-                      )} */}
-
-                      {/* <Text style={styles.phoneHint}>
-                        {selectedCountry === "tj"
-                          ? `${t("editProfile.t94")}`
-                          : `${t("editProfile.t95")}`
-                        }
-                      </Text> */}
-                    </View>
-
-                    {/* Email */}
-                    <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputEmailBlock,
-                      ]}
-                    >
-                      <Text style={[styles.label, styles.labelEmail]}>
-                        {t("editProfile.t11")}
-                      </Text>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          styles.inputEmail,
-                          errors.email && touched.email && styles.inputError,
-                          touched.email && !errors.email && styles.inputSuccess,
-                        ]}
-                        onChangeText={handleChange("email")}
-                        onBlur={handleBlur("email")}
-                        value={values.email}
-                        placeholder={t("editProfile.t12")}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        returnKeyType="next"
-                        editable={!isSubmitting}
-                      />
-                      {errors.email && touched.email && (
-                        <Text style={styles.errorText}>{String(errors.email)}</Text>
-                      )}
-                    </View>
-
-                    {/* Password */}
-                    <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputPasswordBlock,
-                      ]}
-                    >
-                      {/* <Text style={[styles.label, styles.labelPassword]}>
-                        {t("editProfile.t13")}
-                      </Text>
-                      <View style={styles.iconAndInputPasswordBlock}>
-                        <TextInput
-                          style={[
-                            styles.input,
-                            styles.inputPassword,
-                            errors.password &&
-                              touched.password &&
-                              styles.inputError,
-                            touched.password &&
-                              !errors.password &&
-                              styles.inputSuccess,
-                          ]}
-                          onChangeText={(text) =>
-                            handlePasswordChange(text, setFieldValue)
-                          }
-                          onBlur={handleBlur("password")}
-                          value={values.password}
-                          secureTextEntry={!showAndHidePassword}
-                          autoComplete="password-new"
-                          placeholder={t("editProfile.t14")}
-                          returnKeyType="next"
-                          editable={!isSubmitting}
-                        />
-                        {showAndHidePassword ? (
-                          <Entypo
-                            name="eye-with-line"
-                            size={30}
-                            color="black"
-                            style={styles.showAndHidePasswordIcon}
-                            onPress={() =>
-                              !isSubmitting && setShowAndHidePassword(false)
-                            }
-                          />
-                        ) : (
-                          <Entypo
-                            name="eye"
-                            size={30}
-                            color="black"
-                            style={styles.showAndHidePasswordIcon}
-                            onPress={() =>
-                              !isSubmitting && setShowAndHidePassword(true)
-                            }
-                          />
-                        )}
-                      </View> */}
-
-                      {/* Password Strength Indicator */}
-                      {values.password.length > 0 && (
-                        <View style={styles.passwordStrengthContainer}>
-                          <View style={styles.strengthBarContainer}>
-                            <View
-                              style={[
-                                styles.strengthBar,
-                                {
-                                  width: `${passwordStrength.score}%`,
-                                  backgroundColor:
-                                    passwordStrength.score >= 80
-                                      ? "#34C759"
-                                      : passwordStrength.score >= 60
-                                        ? "#FF9500"
-                                        : passwordStrength.score >= 40
-                                          ? "#FFCC00"
-                                          : "#FF3B30",
-                                },
-                              ]}
-                            />
-                          </View>
-                          <Text style={styles.strengthText}>
-                            {t("editProfile.t96")}: {passwordStrength.score}%
-                            {passwordStrength.score >= 80
-                              ? ` (${t("editProfile.t97")})`
-                              : passwordStrength.score >= 60
-                                ? ` (${t("editProfile.t98")})`
-                                : passwordStrength.score >= 40
-                                  ? ` (${t("editProfile.t99")})`
-                                  : ` (${t("editProfile.t100")})`}
-                          </Text>
-
-                          {/* Password Requirements */}
-                          <View style={styles.passwordRequirements}>
-                            <Text style={styles.requirementsTitle}>
-                              {t("editProfile.t101")}:
-                            </Text>
-                            <View style={styles.requirementItem}>
-                              <Text
-                                style={[
-                                  styles.requirementText,
-                                  values.password.length >= 8 &&
-                                    styles.requirementMet,
-                                ]}
-                              >
-                                {values.password.length >= 8 ? "✓" : "•"}{" "}
-                                {t("editProfile.t102")}
-                              </Text>
-                            </View>
-                            <View style={styles.requirementItem}>
-                              <Text
-                                style={[
-                                  styles.requirementText,
-                                  /[A-Z]/.test(values.password) &&
-                                    styles.requirementMet,
-                                ]}
-                              >
-                                {/[A-Z]/.test(values.password) ? "✓" : "•"}{" "}
-                                {t("editProfile.t103")}
-                              </Text>
-                            </View>
-                            <View style={styles.requirementItem}>
-                              <Text
-                                style={[
-                                  styles.requirementText,
-                                  /[a-z]/.test(values.password) &&
-                                    styles.requirementMet,
-                                ]}
-                              >
-                                {/[a-z]/.test(values.password) ? "✓" : "•"}{" "}
-                                {t("editProfile.t104")}
-                              </Text>
-                            </View>
-                            <View style={styles.requirementItem}>
-                              <Text
-                                style={[
-                                  styles.requirementText,
-                                  /\d/.test(values.password) &&
-                                    styles.requirementMet,
-                                ]}
-                              >
-                                {/\d/.test(values.password) ? "✓" : "•"}{" "}
-                                {t("editProfile.t105")}
-                              </Text>
-                            </View>
-                            <View style={styles.requirementItem}>
-                              <Text
-                                style={[
-                                  styles.requirementText,
-                                  /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(
-                                    values.password,
-                                  ) && styles.requirementMet,
-                                ]}
-                              >
-                                {/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(
-                                  values.password,
-                                )
-                                  ? "✓"
-                                  : "•"}{" "}
-                                {t("editProfile.t106")}
-                              </Text>
-                            </View>
-
-                            {/* Advanced feedback */}
-                            {passwordStrength.feedback.length > 0 && (
-                              <View style={styles.feedbackContainer}>
-                                <Text style={styles.feedbackTitle}>
-                                  {t("editProfile.t107")}:
-                                </Text>
-                                {passwordStrength.feedback.map(
-                                  (item, index) => (
-                                    <Text
-                                      key={index}
-                                      style={styles.feedbackItem}
-                                    >
-                                      {item}
-                                    </Text>
-                                  ),
-                                )}
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                      )}
-
-                      {errors.password && touched.password && (
-                        <Text style={styles.errorText}>{String(errors.password)}</Text>
-                      )}
-                    </View>
-
-                    {/* Confirm Password */}
-                    {/* <View
-                      style={[
-                        styles.labelAndInputBlock,
-                        styles.labelAndInputPasswordBlock,
-                      ]}
-                    >
-                      <Text style={[styles.label, styles.labelPassword]}>
-                        {t("editProfile.t15")}
-                      </Text>
-                      <View style={styles.iconAndInputConfirmPasswordBlock}>
-                        <TextInput
-                          style={[
-                            styles.input,
-                            styles.inputPassword,
-                            errors.confirmPassword &&
-                              touched.confirmPassword &&
-                              styles.inputError,
-                            touched.confirmPassword &&
-                              !errors.confirmPassword &&
-                              styles.inputSuccess,
-                          ]}
-                          onChangeText={handleChange("confirmPassword")}
-                          onBlur={handleBlur("confirmPassword")}
-                          value={values.confirmPassword}
-                          secureTextEntry={!showAndHideConfirmPassword}
-                          autoComplete="password-new"
-                          placeholder={t("editProfile.t16")}
-                          returnKeyType="done"
-                          editable={!isSubmitting}
-                        />
-                        {showAndHideConfirmPassword ? (
-                          <Entypo
-                            name="eye-with-line"
-                            size={30}
-                            color="black"
-                            style={styles.showAndHideConfirmPasswordIcon}
-                            onPress={() =>
-                              !isSubmitting &&
-                              setShowAndHideConfirmPassword(false)
-                            }
-                          />
-                        ) : (
-                          <Entypo
-                            name="eye"
-                            size={30}
-                            color="black"
-                            style={styles.showAndHideConfirmPasswordIcon}
-                            onPress={() =>
-                              !isSubmitting &&
-                              setShowAndHideConfirmPassword(true)
-                            }
-                          />
-                        )}
-                      </View>
-                      {errors.confirmPassword && touched.confirmPassword && (
-                        <Text style={styles.errorText}>
-                          {errors.confirmPassword}
-                        </Text>
-                      )}
-                      {touched.confirmPassword &&
-                        !errors.confirmPassword &&
-                        values.confirmPassword === values.password &&
-                        values.password.length > 0 && (
-                          <Text style={styles.successText}>
-                            ✓ {t("editProfile.t108")}
-                          </Text>
-                        )}
-                    </View> */}
-
-                    {/* Save Button */}
-                    <View style={styles.saveButtonContainer}>
-                      <Pressable
-                        style={[
-                          styles.btnSave,
-                          (!isValid || !dirty || isSubmitting) &&
-                            styles.btnSaveDisabled,
-                        ]}
-                        onPress={() => handleSubmit()}
-                        disabled={!isValid || !dirty || isSubmitting}
                       >
-                        {isSubmitting ? (
-                          <ActivityIndicator color="#fff" size="small" />
-                        ) : (
-                          <Text style={styles.btnTextSave}>
-                            {t("editProfile.t17")}
+                        <Text style={[styles.label, styles.labelFullname]}>
+                          {t("editProfile.t3")}
+                        </Text>
+                        <TextInput
+                          style={[
+                            styles.input,
+                            styles.inputFullname,
+                            errors.fullName &&
+                              touched.fullName &&
+                              styles.inputError,
+                            touched.fullName &&
+                              !errors.fullName &&
+                              styles.inputSuccess,
+                          ]}
+                          onChangeText={handleChange("fullName")}
+                          onBlur={handleBlur("fullName")}
+                          value={values.fullName}
+                          placeholder={t("editProfile.t4")}
+                          returnKeyType="next"
+                          editable={!isSubmitting}
+                        />
+                        {errors.fullName && touched.fullName && (
+                          <Text style={styles.errorText}>
+                            {String(errors.fullName)}
                           </Text>
                         )}
-                      </Pressable>
+                      </View>
+
+                      {/* Date of Birth */}
+                      <View
+                        style={[
+                          styles.labelAndInputBlock,
+                          styles.labelAndInputBirthDateBlock,
+                        ]}
+                      >
+                        <Text style={[styles.label, styles.labelBirthDate]}>
+                          {t("editProfile.t5")}
+                        </Text>
+                        <TextInput
+                          style={[
+                            styles.input,
+                            styles.inputBirthDate,
+                            errors.dateOfBirth &&
+                              touched.dateOfBirth &&
+                              styles.inputError,
+                            touched.dateOfBirth &&
+                              !errors.dateOfBirth &&
+                              styles.inputSuccess,
+                          ]}
+                          onChangeText={(text) =>
+                            handleDateOfBirthChange(text, setFieldValue)
+                          }
+                          onBlur={handleBlur("dateOfBirth")}
+                          value={values.dateOfBirth}
+                          placeholder={t("editProfile.t6")}
+                          keyboardType="numeric"
+                          returnKeyType="next"
+                          editable={!isSubmitting}
+                        />
+                        {errors.dateOfBirth && touched.dateOfBirth && (
+                          <Text style={styles.errorText}>
+                            {String(errors.dateOfBirth)}
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Phone Number */}
+                      <View
+                        style={[
+                          styles.labelAndInputBlock,
+                          styles.labelAndInputPhoneNumberBlock,
+                        ]}
+                      >
+                        <Text style={[styles.label, styles.labelPhoneNumber]}>
+                          {t("editProfile.t9")}
+                        </Text>
+
+                        <View style={styles.phoneInputContainer}>
+                          <TextInput
+                            style={[
+                              styles.input,
+                              styles.inputPhoneNumber,
+                              styles.phoneInput,
+                              (errors.phoneNumber && touched.phoneNumber) ||
+                              phoneError
+                                ? styles.inputError
+                                : null,
+                              touched.phoneNumber &&
+                                !errors.phoneNumber &&
+                                !phoneError &&
+                                styles.inputSuccess,
+                            ]}
+                            onChangeText={(text) =>
+                              handlePhoneChange(text, setFieldValue)
+                            }
+                            onBlur={handleBlur("phoneNumber")}
+                            value={values.phoneNumber}
+                            placeholder="+992 93 123 4567"
+                            keyboardType="phone-pad"
+                            returnKeyType="next"
+                            editable={!isSubmitting}
+                          />
+                        </View>
+
+                        {errors.phoneNumber && touched.phoneNumber ? (
+                          <Text style={styles.errorText}>
+                            {String(errors.phoneNumber)}
+                          </Text>
+                        ) : phoneError ? (
+                          <Text style={styles.errorText}>{phoneError}</Text>
+                        ) : null}
+                      </View>
+
+                      {/* Email */}
+                      <View
+                        style={[
+                          styles.labelAndInputBlock,
+                          styles.labelAndInputEmailBlock,
+                        ]}
+                      >
+                        <Text style={[styles.label, styles.labelEmail]}>
+                          {t("editProfile.t11")}
+                        </Text>
+                        <TextInput
+                          style={[
+                            styles.input,
+                            styles.inputEmail,
+                            errors.email && touched.email && styles.inputError,
+                            touched.email &&
+                              !errors.email &&
+                              styles.inputSuccess,
+                          ]}
+                          onChangeText={handleChange("email")}
+                          onBlur={handleBlur("email")}
+                          value={values.email}
+                          placeholder={t("editProfile.t12")}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          returnKeyType="next"
+                          editable={!isSubmitting}
+                        />
+                        {errors.email && touched.email && (
+                          <Text style={styles.errorText}>
+                            {String(errors.email)}
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Save Button */}
+                      <View style={styles.saveButtonContainer}>
+                        <Pressable
+                          style={[
+                            styles.btnSave,
+                            isSaveDisabled && styles.btnSaveDisabled,
+                          ]}
+                          onPress={() => handleSubmit()}
+                          disabled={isSaveDisabled}
+                        >
+                          {isSubmitting ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                          ) : (
+                            <Text style={styles.btnTextSave}>
+                              {t("editProfile.t17")}
+                            </Text>
+                          )}
+                        </Pressable>
+                      </View>
                     </View>
-                  </View>
-                )}
+                  );
+                }}
               </Formik>
             </ScrollView>
           </TouchableWithoutFeedback>
@@ -1552,7 +1253,6 @@ const styles = StyleSheet.create({
   },
 
   sectionEditUserComponentScrollView: {
-    // flex: 1,
     paddingBottom: 70,
   },
 

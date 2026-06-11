@@ -3,8 +3,8 @@ import ModalReceivingBook from "@/components/book/ModalReceivingBook";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { useNavigation } from "expo-router";
-import React, { useState, useEffect } from "react";
+import { useNavigation, useFocusEffect } from "expo-router";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -22,7 +22,12 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { useAppDispatch } from "@/hooks/use-app-dispatch";
 import { useAppSelector } from "@/hooks/use-app-selector";
-import { getBookById, toggleFavoriteBook, isBookFavorite } from "@/api/api";
+import {
+  getBookById,
+  toggleFavoriteBook,
+  isBookFavorite,
+  refreshFavoriteBooks,
+} from "@/api/api";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -54,21 +59,29 @@ const Book = ({ route }: { route: any }) => {
   }, [bookId, dispatch]);
 
   // Check favorite status when user or book changes
-  useEffect(() => {
-    async function checkFavorite() {
-      if (currentUser && bookId) {
-        try {
-          const favResult = await dispatch(
-            isBookFavorite({ uid: currentUser.uid, bookId }),
-          ).unwrap();
-          setIsFavorite(favResult.isFavorite);
-        } catch (error) {
-          console.error("Error checking favorite:", error);
-        }
+  const checkFavoriteStatus = useCallback(async () => {
+    if (currentUser && bookId) {
+      try {
+        const favResult = await dispatch(
+          isBookFavorite({ uid: currentUser.uid, bookId }),
+        ).unwrap();
+        setIsFavorite(favResult.isFavorite);
+      } catch (error) {
+        console.error("Error checking favorite:", error);
       }
     }
-    checkFavorite();
   }, [currentUser, bookId, dispatch]);
+
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, [checkFavoriteStatus]);
+
+  // Refresh favorite status when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      checkFavoriteStatus();
+    }, [checkFavoriteStatus]),
+  );
 
   const handleToggleFavorite = async () => {
     if (!currentUser || !bookId) return;
@@ -77,6 +90,11 @@ const Book = ({ route }: { route: any }) => {
         toggleFavoriteBook({ uid: currentUser.uid, bookId }),
       ).unwrap();
       setIsFavorite(result.isFavorite);
+
+      // Refresh favorite books list in the background
+      if (currentUser?.uid) {
+        await dispatch(refreshFavoriteBooks(currentUser.uid));
+      }
     } catch (error) {
       Alert.alert("Error", "Failed to toggle favorite");
       console.error(error);
@@ -120,13 +138,15 @@ const Book = ({ route }: { route: any }) => {
             blurRadius={10}
             style={styles.imgBgHeaderBookComponent}
           >
-            <Ionicons
-              name="arrow-back-circle-outline"
-              size={43}
-              color="black"
-              style={styles.backIcon}
-              onPress={() => navigation.goBack()}
-            />
+            <Pressable style={styles.btnBackIcon}>
+              <Ionicons
+                name="arrow-back-circle-outline"
+                size={30}
+                color="black"
+                style={styles.backIcon}
+                onPress={() => navigation.goBack()}
+              />
+            </Pressable>
             <Pressable
               style={styles.btnAddToFavorite}
               onPress={handleToggleFavorite}
@@ -208,7 +228,7 @@ const Book = ({ route }: { route: any }) => {
               <Tab.Screen
                 name="AboutBook"
                 options={{
-                  title: "About",
+                  title: t("book.t3"),
                 }}
               >
                 {(props) => <AboutBook {...props} bookId={bookId} />}
@@ -269,7 +289,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  backIcon: { position: "absolute", top: 30, left: 20 },
+  btnBackIcon: {
+    position: "absolute",
+    top: 30,
+    left: 20,
+    backgroundColor: "white",
+    borderRadius: 100,
+    padding: 8,
+  },
+  backIcon: {},
   btnAddToFavorite: {
     position: "absolute",
     top: 30,
