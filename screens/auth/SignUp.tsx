@@ -30,7 +30,6 @@ import * as Yup from "yup";
 // @ts-ignore: Module 'country-telephone-data' has no type declarations
 import { allCountries } from "country-telephone-data";
 
-
 // Tajik SIM card prefixes and operators data
 const TAJIK_PREFIXES = {
   "90": "MegaFon Tajikistan",
@@ -536,7 +535,6 @@ const SignUp = () => {
         values.phoneNumber.trim(),
         formattedDateForApi,
       );
-      Alert.alert("Success", "Registered successfully! You can now sign in.");
     } catch (error: any) {
       if (error.code === "auth/email-already-in-use") {
         Alert.alert("Error", "This email is already registered.");
@@ -731,17 +729,17 @@ const SignUp = () => {
                         )
                       )}
 
-                      {detectedOperator && (
+                      {/* {detectedOperator && (
                         <Text style={styles.operatorText}>
                           Operator: {detectedOperator}
                         </Text>
-                      )}
+                      )} */}
 
-                      <Text style={styles.phoneHint}>
+                      {/* <Text style={styles.phoneHint}>
                         {selectedCountry === "tj"
                           ? "Start with +992. Supported prefixes: 90, 91, 92, 93, 94, 98, 99, etc."
                           : "Start with + or select country."}
-                      </Text>
+                      </Text> */}
                     </View>
 
                     {/* Email */}
@@ -806,7 +804,7 @@ const SignUp = () => {
                         />
                         {showAndHidePassword ? (
                           <Entypo
-                            name="eye-with-line"
+                            name="eye"
                             size={30}
                             color="black"
                             style={styles.showAndHidePasswordIcon}
@@ -816,7 +814,7 @@ const SignUp = () => {
                           />
                         ) : (
                           <Entypo
-                            name="eye"
+                            name="eye-with-line"
                             size={30}
                             color="black"
                             style={styles.showAndHidePasswordIcon}
@@ -893,7 +891,7 @@ const SignUp = () => {
                         />
                         {showAndHideConfirmPassword ? (
                           <Entypo
-                            name="eye-with-line"
+                            name="eye"
                             size={30}
                             color="black"
                             style={styles.showAndHideConfirmPasswordIcon}
@@ -904,7 +902,7 @@ const SignUp = () => {
                           />
                         ) : (
                           <Entypo
-                            name="eye"
+                            name="eye-with-line"
                             size={30}
                             color="black"
                             style={styles.showAndHideConfirmPasswordIcon}

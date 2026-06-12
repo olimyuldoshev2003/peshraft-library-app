@@ -68,11 +68,13 @@ const SignIn = () => {
   const handleSignIn = async (values: SignInFormValues) => {
     setIsSubmitting(true);
     try {
-      await mobileSignIn(values.email.trim(), values.password.trim());
+     await mobileSignIn(values.email.trim(), values.password.trim());
       Alert.alert("Success", "Login successful!");
-      navigation.replace("Application");
     } catch (error: any) {
-      if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+      if (
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/wrong-password"
+      ) {
         Alert.alert("Error", "Invalid email or password");
       } else if (error.code === "auth/user-not-found") {
         Alert.alert("Error", "User not found");
@@ -95,7 +97,10 @@ const SignIn = () => {
         {
           text: "Send",
           onPress: () => {
-            Alert.alert("Success", "Reset link sent to your email! Check your inbox.");
+            Alert.alert(
+              "Success",
+              "Reset link sent to your email! Check your inbox.",
+            );
           },
         },
       ],
@@ -203,7 +208,7 @@ const SignIn = () => {
                       />
                       {showAndHidePassword ? (
                         <Entypo
-                          name="eye-with-line"
+                          name="eye"
                           size={30}
                           color="black"
                           style={styles.showAndHidePasswordIcon}
@@ -213,7 +218,7 @@ const SignIn = () => {
                         />
                       ) : (
                         <Entypo
-                          name="eye"
+                          name="eye-with-line"
                           size={30}
                           color="black"
                           style={styles.showAndHidePasswordIcon}
@@ -296,7 +301,7 @@ const SignIn = () => {
                 </View>
 
                 {/* Divider */}
-                <View style={styles.anotherWaysToSignUpBlock}>
+                {/* <View style={styles.anotherWaysToSignUpBlock}>
                   <View style={styles.lineWithTextBlock}>
                     <View style={[styles.line, styles.line1]}></View>
                     <Text style={styles.textInTheMiddleOfLines}>Or</Text>
@@ -351,7 +356,7 @@ const SignIn = () => {
                       />
                     </Pressable>
                   </View>
-                </View>
+                </View> */}
 
                 {/* Sign Up Navigation */}
                 <View style={styles.btnSignUpNavBtnBlock}>
