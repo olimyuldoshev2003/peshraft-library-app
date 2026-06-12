@@ -171,7 +171,7 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
     <Modalize
       ref={languageModal}
       adjustToContentHeight={false}
-      modalHeight={320}
+      modalHeight={280}
       withHandle={true}
     >
       <View style={styles.languageModalComponent}>

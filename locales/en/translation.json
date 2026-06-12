@@ -101,7 +101,27 @@
     "t5": "Submit",
     "t6": "Search Reviews",
     "t7": "Cancel",
-    "t8": "Search"
+    "t8": "Search",
+
+    "t9": "Error",
+    "t10": "Please select a star rating",
+    "t11": "Please write your review",
+    "t12": "Please sign in",
+    "t13": "Rating must be between 1 and 5",
+    "t14": "Review must be at least 10 characters long",
+    "t15": "Review cannot exceed 1000 characters",
+    "t16": "You must be logged in to add a review",
+    "t17": "Invalid user session. Please login again",
+    "t18": "User name is required. Please update your profile",
+    "t19": "User name must be at least 2 characters long",
+    "t20": "User name cannot exceed 100 characters",
+    "t21": "Please select a valid review category",
+    "t22": "Missing required fields",
+    "t23": "Success",
+    "t24": "Review added successfully",
+    "t25": "Failed to add review. Please try again",
+    "t26": "Limit Reached",
+    "t27": "Review cannot exceed 1000 characters"
   },
   "modalReceivingBook": {
     "t1": "Receive Book",
@@ -145,7 +165,17 @@
     "t33": "Success",
     "t34": "Your request has been submitted successfully! The specialist will contact you soon.",
     "t35": "Error",
-    "t36": "Please enter all fields"
+    "t36": "Please enter all fields",
+    "t37": "Please enter a valid future date (DD.MM.YYYY)",
+    "t38": "Please fix the receiving date first",
+    "t39": "Returning date must be after the receiving date",
+    "t40": "Borrow period cannot exceed 30 days",
+    "t41": "Returning date must be at least 1 day after receiving date",
+    "t42": "Authentication Required",
+    "t43": "You must be logged in to request a book. Please log in and try again",
+    "t44": "Book information is missing. Please try again",
+    "t45": "Request Failed",
+    "t46": "Something went wrong. Please try again"
   },
   "bookshelf": {
     "t1": "My Bookshelf",

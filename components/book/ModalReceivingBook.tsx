@@ -16,6 +16,7 @@ import {
   View,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 
 interface FormData {
@@ -36,6 +37,8 @@ interface FormErrors {
   returningDate?: string;
 }
 
+const { width: screenWidth } = Dimensions.get("window");
+
 const ModalReceivingBook = ({
   modalReceivingBook,
   setModalReceivingBook,
@@ -44,7 +47,7 @@ const ModalReceivingBook = ({
   modalReceivingBook: boolean;
   setModalReceivingBook: Dispatch<SetStateAction<boolean>>;
   book?: any;
-}) => {
+  }) => {
   const navigation: any = useNavigation();
   const { t } = useTranslation();
   const { currentUser, userProfile } = useAuth();
@@ -193,35 +196,35 @@ const ModalReceivingBook = ({
       case "receivingDate":
         if (!value || !value.trim()) return t("modalReceivingBook.t28");
         if (!isValidDate(value, false))
-          return "Please enter a valid future date (DD.MM.YYYY)";
+          return t("modalReceivingBook.t37");
         return "";
 
       case "returningDate":
         if (!value || !value.trim()) return t("modalReceivingBook.t31");
         if (!isValidDate(value, false))
-          return "Please enter a valid future date (DD.MM.YYYY)";
+          return t("modalReceivingBook.t37");
 
         // Validate that returning date is after receiving date
         if (data.receivingDate) {
           if (!isValidDate(data.receivingDate, false)) {
-            return "Please fix the receiving date first";
+            return t("modalReceivingBook.t38");
           }
 
           if (isSameDate(value, data.receivingDate)) {
-            return "Returning date must be after the receiving date";
+            return t("modalReceivingBook.t39");
           }
 
           if (!isDateAfter(data.receivingDate, value)) {
-            return "Returning date must be after the receiving date";
+            return t("modalReceivingBook.t39");
           }
 
           // Maximum borrow period validation (e.g., 30 days max)
           const daysDifference = getDaysDifference(data.receivingDate, value);
           if (daysDifference > 30) {
-            return "Borrow period cannot exceed 30 days";
+            return t("modalReceivingBook.t40");
           }
           if (daysDifference < 1) {
-            return "Returning date must be at least 1 day after receiving date";
+            return t("modalReceivingBook.t41");
           }
         }
         return "";
@@ -328,8 +331,8 @@ const ModalReceivingBook = ({
     // Double-check authentication before submitting
     if (!currentUser || !userProfile) {
       Alert.alert(
-        "Authentication Required",
-        "You must be logged in to request a book. Please log in and try again.",
+        t("modalReceivingBook.t42"),
+        `${t("modalReceivingBook.t43")}.`,
         [
           {
             text: "OK",
@@ -373,7 +376,7 @@ const ModalReceivingBook = ({
     }
 
     if (!book?.id) {
-      Alert.alert("Error", "Book information is missing. Please try again.");
+      Alert.alert(t("modalReceivingBook.t35"), `${t("modalReceivingBook.t44")}.`);
       return;
     }
 
@@ -405,8 +408,8 @@ const ModalReceivingBook = ({
       ]);
     } catch (error: any) {
       Alert.alert(
-        "Request Failed",
-        error.message || "Something went wrong. Please try again.",
+        t("modalReceivingBook.t45"),
+        error.message || `${t("modalReceivingBook.t46")}.`,
       );
     } finally {
       setIsSubmitting(false);
@@ -458,7 +461,7 @@ const ModalReceivingBook = ({
                 style={styles.imgOfBook}
               />
               <View style={styles.nameAndAuthorOfBookBlock}>
-                <Text style={styles.nameOfBook}>{book?.title || "Book"}</Text>
+                <Text style={styles.nameOfBook}>{book?.title || ""}</Text>
                 <Text style={styles.authorOfBook}>{book?.author || ""}</Text>
               </View>
             </View>
@@ -653,24 +656,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 30,
-    marginTop: 5,
+    marginTop: 20,
   },
   imgOfBook: {
-    width: 112,
-    height: 200,
+    width: 100,
+    height: 160,
     resizeMode: "contain",
   },
   nameAndAuthorOfBookBlock: {},
   nameOfBook: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "500",
     textAlign: "center",
+    maxWidth: screenWidth - 120,
   },
   authorOfBook: {
     color: "#515151",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400",
     textAlign: "center",
+    maxWidth: screenWidth - 120,
   },
 
   sectionModalReceivingBookScrollView: {

@@ -288,7 +288,7 @@ const ReviewBook = ({
               }}
             >
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{ t("reviewBook.t6")}</Text>
+                <Text style={styles.modalTitle}>{t("reviewBook.t6")}</Text>
                 <Pressable
                   onPress={handleCloseModal}
                   style={styles.modalCloseBtn}
@@ -329,14 +329,18 @@ const ReviewBook = ({
                   style={[styles.modalButton, styles.modalCancelButton]}
                   onPress={handleCloseModal}
                 >
-                  <Text style={styles.modalCancelButtonText}>{t("reviewBook.t7")}</Text>
+                  <Text style={styles.modalCancelButtonText}>
+                    {t("reviewBook.t7")}
+                  </Text>
                 </Pressable>
                 <Pressable
                   style={[styles.modalButton, styles.modalSearchButton]}
                   onPress={handleSearchSubmit}
                 >
                   <Feather name="search" size={18} color="#fff" />
-                  <Text style={styles.modalSearchButtonText}>{t("reviewBook.t8")}</Text>
+                  <Text style={styles.modalSearchButtonText}>
+                    {t("reviewBook.t8")}
+                  </Text>
                 </Pressable>
               </View>
             </Pressable>
