@@ -14,8 +14,8 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
   //for translation
   const { t, i18n } = useTranslation();
 
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
-  const [selectedLanguageValue, setSelectedLanguageValue] = useState("en");
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [selectedLanguageValue, setSelectedLanguageValue] = useState("");
 
   const [languages, setLanguages] = useState([
     {
@@ -41,18 +41,19 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
     },
   ]);
 
+  // Load saved language and sync with i18n
   useEffect(() => {
-    // Load saved language from storage or use device default
     const loadSavedLanguage = async () => {
       try {
-        const savedLanguage = await i18n.language;
-        if (savedLanguage) {
-          let langValue = savedLanguage;
-          let langName = "English";
+        const currentLanguage = i18n.language;
 
-          if (savedLanguage === "ru") {
+        if (currentLanguage) {
+          let langValue = currentLanguage;
+          let langName = "";
+
+          if (currentLanguage === "ru") {
             langName = "Русский";
-          } else if (savedLanguage === "tj") {
+          } else if (currentLanguage === "tj") {
             langName = "Тоҷикӣ";
           } else {
             langName = "English";
@@ -61,35 +62,42 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
 
           setSelectedLanguage(langName);
           setSelectedLanguageValue(langValue);
+        } else {
+          // Default to English
+          setSelectedLanguage("English");
+          setSelectedLanguageValue("en");
         }
       } catch (error) {
         console.error("Error loading saved language:", error);
+        // Default to English on error
+        setSelectedLanguage("English");
+        setSelectedLanguageValue("en");
       }
     };
 
     loadSavedLanguage();
-  }, []);
+  }, [i18n.language]);
 
   // Update languages when translation changes
   useEffect(() => {
     setLanguages([
       {
         id: 1,
-        name: t("language.ru"),
+        name: t("language.ru") || "Русский",
         value: "ru",
         flag: require("../../assets/peshraft-library/profile/ru-lang.jpg"),
         searchTerms: ["russian", "русский", "русӣ"],
       },
       {
         id: 2,
-        name: t("language.tj"),
+        name: t("language.tj") || "Тоҷикӣ",
         value: "tj",
         flag: require("../../assets/peshraft-library/profile/tj-lang.jpg"),
         searchTerms: ["tajik", "таджикский", "тоҷикӣ"],
       },
       {
         id: 3,
-        name: t("language.en"),
+        name: t("language.en") || "English",
         value: "en",
         flag: require("../../assets/peshraft-library/profile/en-lang.jpg"),
         searchTerms: ["english", "английский", "англисӣ"],
@@ -97,12 +105,12 @@ const LanguageModal = ({ languageModal }: { languageModal: any }) => {
     ]);
   }, [t]);
 
-  // Also update selectedLanguage name when languages change
+  // Update selectedLanguage name when languages change or selectedLanguageValue changes
   useEffect(() => {
     const currentLang = languages.find(
       (lang) => lang.value === selectedLanguageValue,
     );
-    if (currentLang) {
+    if (currentLang && currentLang.name !== selectedLanguage) {
       setSelectedLanguage(currentLang.name);
     }
   }, [languages, selectedLanguageValue]);

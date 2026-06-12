@@ -45,10 +45,10 @@ const ReturnBook = ({ route }: { route?: any }) => {
     }
 
     Alert.alert(
-      "Confirm Return",
-      `Are you sure you want to return "${borrowData.bookTitle}"?`,
+      t("returnBook.t14"),
+      `${t("returnBook.t15")} "${borrowData.bookTitle}"?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("returnBook.t16"), style: "cancel" },
         {
           text: `${t("returnBook.t4")}, ${t("returnBook.t5")}`,
           style: "destructive",
@@ -76,7 +76,10 @@ const ReturnBook = ({ route }: { route?: any }) => {
               });
 
               Alert.alert(`${t("returnBook.t6")}!`, `${t("returnBook.t7")}.`, [
-                { text: "OK", onPress: () => navigation.navigate("Home") },
+                {
+                  text: "OK",
+                  onPress: () => {},
+                },
               ]);
             } catch (error: any) {
               Alert.alert("Error", error.message || `${t("returnBook.t8")}.`);
@@ -104,7 +107,7 @@ const ReturnBook = ({ route }: { route?: any }) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>{ t("returnBook.t9")}</Text>
+          <Text style={styles.title}>{t("returnBook.t9")}</Text>
 
           {/* Book image */}
           <View style={styles.imageBlock}>
@@ -125,7 +128,7 @@ const ReturnBook = ({ route }: { route?: any }) => {
           {/* Borrow details */}
           <View style={styles.detailsCard}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>{ t("returnBook.t10")}</Text>
+              <Text style={styles.detailLabel}>{t("returnBook.t10")}</Text>
               <Text style={styles.detailValue}>
                 {borrowData.borrowerName || userProfile?.fullName || "-"}
               </Text>
@@ -138,9 +141,7 @@ const ReturnBook = ({ route }: { route?: any }) => {
             </View>
           </View>
 
-          <Text style={styles.infoNote}>
-            {t("returnBook.t12")}.
-          </Text>
+          <Text style={styles.infoNote}>{t("returnBook.t12")}.</Text>
 
           {/* Confirm button */}
           <Pressable

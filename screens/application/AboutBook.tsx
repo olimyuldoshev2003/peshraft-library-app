@@ -1,5 +1,5 @@
 import { useNavigation } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -27,7 +27,8 @@ const AboutBook = ({
   const navigation: any = useNavigation();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const [otherBooks, setOtherBooks] = React.useState<any[]>([]);
+  const [otherBooks, setOtherBooks] = useState<any[]>([]);
+  const [loadingOtherBooks, setLoadingOtherBooks] = useState(false);
 
   // Get bookId from route params or prop
   const bookId = route?.params?.bookId || propBookId;
@@ -42,14 +43,34 @@ const AboutBook = ({
 
   // Load other books for recommendations
   useEffect(() => {
-    if (bookId) {
-      getAllBooks()
-        .then((books: any[]) => {
+    const loadOtherBooks = async () => {
+      if (!bookId) {
+        console.log("No bookId available");
+        return;
+      }
+
+      setLoadingOtherBooks(true);
+      try {
+        const books = await getAllBooks();
+        console.log("All books loaded:", books?.length);
+
+        if (books && Array.isArray(books)) {
           const others = books.filter((b: any) => b.id !== bookId).slice(0, 6);
+          console.log("Other books found:", others.length);
           setOtherBooks(others);
-        })
-        .catch(console.error);
-    }
+        } else {
+          console.log("No books returned from getAllBooks");
+          setOtherBooks([]);
+        }
+      } catch (error) {
+        console.error("Error loading other books:", error);
+        setOtherBooks([]);
+      } finally {
+        setLoadingOtherBooks(false);
+      }
+    };
+
+    loadOtherBooks();
   }, [bookId]);
 
   // Show loading
@@ -96,7 +117,14 @@ const AboutBook = ({
           )}
         </View>
 
-        {otherBooks.length > 0 && (
+        {loadingOtherBooks ? (
+          <View style={styles.otherBooksLoadingContainer}>
+            <ActivityIndicator size="small" color="#00A9FF" />
+            <Text style={styles.otherBooksLoadingText}>
+              {t("aboutBook.t7")}...
+            </Text>
+          </View>
+        ) : otherBooks.length > 0 ? (
           <View style={styles.otherBooksContainer}>
             <Text style={styles.titleOtherBooks}>{t("aboutBook.t1")}</Text>
             <ScrollView
@@ -130,7 +158,7 @@ const AboutBook = ({
               ))}
             </ScrollView>
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -143,33 +171,48 @@ const styles = StyleSheet.create({
   aboutBookComponentBlockScrollView: { paddingBottom: 10 },
   aboutBookComponentBlock: { padding: 10 },
   aboutBookBlock: {},
-  aboutBook: { fontSize: 16, fontWeight: "500" },
-  infoText: { fontSize: 15, color: "#555", fontWeight: "400" },
-  otherBooksContainer: { marginTop: 10 },
-  titleOtherBooks: { fontSize: 21, fontWeight: "500" },
+  aboutBook: { fontSize: 16, fontWeight: "500", lineHeight: 24, color: "#333" },
+  infoText: { fontSize: 15, color: "#555", fontWeight: "400", marginTop: 4 },
+  otherBooksContainer: { marginTop: 20 },
+  titleOtherBooks: {
+    fontSize: 17,
+    fontWeight: "600", color: "#000"
+  },
+  otherBooksLoadingContainer: {
+    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 20,
+  },
+  otherBooksLoadingText: {
+    fontSize: 14,
+    color: "#666",
+  },
   otherBooksBlockScrollView: {
     marginTop: 10,
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
     paddingRight: 10,
   },
   otherBooksBlock: {},
   otherBookImgAndName: {
-    gap: 5,
-    width: 95,
+    gap: 8,
+    width: 100,
     alignItems: "center",
   },
   otherBookImg: {
-    width: 95,
-    height: 145,
-    borderRadius: 8,
+    width: 100,
+    height: 150,
+    borderRadius: 10,
+    backgroundColor: "#f0f0f0",
   },
   otherBookName: {
     textAlign: "center",
     fontSize: 13,
     fontWeight: "500",
-    width: 95,
-    maxWidth: 95,
+    width: 100,
     color: "#333",
   },
   loadingContainer: {

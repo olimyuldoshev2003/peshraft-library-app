@@ -15,6 +15,7 @@ import {
   TextInput,
   View,
   Dimensions,
+  Platform,
 } from "react-native";
 
 import { getUserBookshelf, getBookById } from "@/firebase/mobile.services";
@@ -109,14 +110,14 @@ const Bookshelf = () => {
     }
 
     if (daysLeft < 0) {
-      return `Overdue by ${Math.abs(daysLeft)} days`;
+      return `${t("receivedBook.t9")} ${Math.abs(daysLeft)} ${t("receivedBook.t8")}`;
     }
 
     if (daysLeft === 0) {
-      return "Due today";
+      return t("receivedBook.t10");
     }
 
-    return `${daysLeft} days left`;
+    return `${daysLeft} ${daysLeft === 1 ? t("receivedBook.t4") : t("receivedBook.t5")}`;
   };
 
   async function loadData() {
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
   },
   bookshelfComponentBlock: {
     padding: 10,
-    paddingTop: 25,
+    paddingTop: Platform.OS === "ios" ? 25 : 20,
     flex: 1,
   },
   headerBookshelfComponent: {
@@ -342,6 +343,7 @@ const styles = StyleSheet.create({
   titleOfComponent: {
     fontSize: 25,
     fontWeight: "500",
+    color: "#000",
   },
   searchBlock: {
     position: "relative",
@@ -368,6 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingLeft: 55,
     height: 48,
+    color: "#000",
   },
   sectionBookshelfComponent: {},
   bookshelfReceivedBooksScrollView: {
@@ -409,6 +412,7 @@ const styles = StyleSheet.create({
   },
   receivedBookContainerBlock2: {
     padding: 10,
+    paddingLeft: 12,
     flex: 1,
     justifyContent: "space-between",
   },
@@ -425,6 +429,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 4,
+    color: "#000",
   },
   authorOfBook: {
     color: "#515151",
@@ -453,10 +458,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   btnReturnBook: {
-    padding: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#404066",
+    backgroundColor: "transparent",
   },
   btnTextReturnBook: {
     color: "#404066",

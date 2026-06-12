@@ -67,7 +67,10 @@
     "t10": "Borrower",
     "t11": "Due Date",
     "t12": "When you tap 'Confirm Return', a request will be sent to the admin. The book will be marked as returned once the admin approves",
-    "t13": "Confirm Return"
+    "t13": "Confirm Return",
+    "t14": "Confirm Return",
+    "t15": "Are you sure you want to return",
+    "t16": "Cancel"
   },
   "book": {
     "t1": "page",
@@ -82,7 +85,8 @@
     "t3": "No description available",
     "t4": "Year",
     "t5": "Language",
-    "t6": "Available copies"
+    "t6": "Available copies",
+    "t7": "Loading recommendations"
   },
   "reviewBook": {
     "t1": "Reviews",
@@ -184,7 +188,10 @@
     "t4": "days left",
     "t5": "Return the book",
     "t6": "No books found",
-    "t7": "No borrowed books"
+    "t7": "No borrowed books",
+    "t8": "Overdue by",
+    "t9": "days",
+    "t10": "Due today"
   },
   "favoriteBooks": {
     "t1": "My favorite books",

@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Platform,
 } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -25,8 +26,10 @@ const ReceivedBook = ({ route }: { route?: any }) => {
   const { t, i18n } = useTranslation();
   const [borrowData, setBorrowData] = useState<any>(null);
   const [bookImage, setBookImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const [otherBooks, setOtherBooks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingOtherBooks, setLoadingOtherBooks] = useState(true);
 
   const passedBorrowData = route?.params?.borrowData;
   const borrowId = route?.params?.borrowId;
@@ -98,34 +101,57 @@ const ReceivedBook = ({ route }: { route?: any }) => {
   };
 
   useEffect(() => {
-    if (passedBorrowData) {
-      setBorrowData(passedBorrowData);
-      if (passedBorrowData.bookId) {
-        getBookById(passedBorrowData.bookId)
-          .then((book: any) => {
-            if (book?.image_url) setBookImage(book.image_url);
-          })
-          .catch(console.error);
-      }
-      getAllBooks()
-        .then((books: any[]) => setOtherBooks(books.slice(0, 6)))
-        .catch(console.error);
-      return;
-    }
+    const loadData = async () => {
+      setLoading(true);
+      setLoadingOtherBooks(true);
 
-    if (!currentUser) return;
-    setLoading(true);
-    async function load() {
-      const shelf = await getUserBookshelf(currentUser!.uid);
-      const borrow = borrowId
-        ? shelf.find((b: any) => b.id === borrowId) || shelf[0]
-        : shelf[0];
-      setBorrowData(borrow || null);
-      const books = await getAllBooks();
-      setOtherBooks(books.slice(0, 6));
-      setLoading(false);
-    }
-    load().catch(console.error);
+      try {
+        if (passedBorrowData) {
+          setBorrowData(passedBorrowData);
+          if (passedBorrowData.bookId) {
+            try {
+              const book:any = await getBookById(passedBorrowData.bookId);
+              if (book?.image_url) setBookImage(book.image_url);
+            } catch (error) {
+              console.error("Error loading book image:", error);
+            }
+          }
+
+          try {
+            const books = await getAllBooks();
+            setOtherBooks(books.slice(0, 6));
+          } catch (error) {
+            console.error("Error loading other books:", error);
+          } finally {
+            setLoadingOtherBooks(false);
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (!currentUser) {
+          setLoading(false);
+          setLoadingOtherBooks(false);
+          return;
+        }
+
+        const shelf = await getUserBookshelf(currentUser.uid);
+        const borrow = borrowId
+          ? shelf.find((b: any) => b.id === borrowId) || shelf[0]
+          : shelf[0];
+        setBorrowData(borrow || null);
+
+        const books = await getAllBooks();
+        setOtherBooks(books.slice(0, 6));
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+        setLoadingOtherBooks(false);
+      }
+    };
+
+    loadData();
   }, [currentUser, borrowId, passedBorrowData]);
 
   const dynamicStyles = StyleSheet.create({
@@ -218,14 +244,14 @@ const ReceivedBook = ({ route }: { route?: any }) => {
     }
 
     if (daysLeft < 0) {
-      return `${t("receivedBook.t9")} ${Math.abs(daysLeft)} ${t("receivedBook.days") || "days"}`;
+      return `${t("receivedBook.t9")} ${Math.abs(daysLeft)} ${t("receivedBook.t9") === "Overdue by" ? "days" : t("receivedBook.days") || "days"}`;
     }
 
     if (daysLeft === 0) {
       return t("receivedBook.t10");
     }
 
-    return `${daysLeft} ${t("receivedBook.t5")}`;
+    return `${daysLeft} ${daysLeft === 1 ? t("receivedBook.t4") : t("receivedBook.t5")}`;
   };
 
   const isOverdue = daysLeft !== null && daysLeft < 0;
@@ -250,16 +276,16 @@ const ReceivedBook = ({ route }: { route?: any }) => {
             {t("receivedBook.t1")} {userProfile?.fullName || ""}
           </Text>
 
-          <View style={styles.imgOfBookBlock}>
-            <Image
-              source={
-                bookImage
-                  ? { uri: bookImage }
-                  : require("../../assets/peshraft-library/home/tojikon.jpg")
-              }
-              style={styles.imgOfBook}
-            />
-          </View>
+          {bookImage && !imageError && (
+            <View style={styles.imgOfBookBlock}>
+              <Image
+                source={{ uri: bookImage }}
+                style={styles.imgOfBook}
+                onError={() => setImageError(true)}
+                resizeMode="contain"
+              />
+            </View>
+          )}
 
           <View style={styles.blockForText}>
             <Text style={styles.textNumber1}>
@@ -302,9 +328,16 @@ const ReceivedBook = ({ route }: { route?: any }) => {
           </View>
 
           {/* Other Books */}
-          {otherBooks.length > 0 && (
-            <View style={styles.otherBooksContainer}>
-              <Text style={styles.titleOtherBooks}>{t("receivedBook.t7")}</Text>
+          <View style={styles.otherBooksContainer}>
+            <Text style={styles.titleOtherBooks}>{t("receivedBook.t7")}</Text>
+            {loadingOtherBooks ? (
+              <View style={styles.otherBooksLoadingContainer}>
+                <ActivityIndicator size="small" color="#00A9FF" />
+                <Text style={styles.otherBooksLoadingText}>
+                  Loading recommendations...
+                </Text>
+              </View>
+            ) : otherBooks.length > 0 ? (
               <ScrollView
                 showsHorizontalScrollIndicator={false}
                 horizontal
@@ -319,18 +352,26 @@ const ReceivedBook = ({ route }: { route?: any }) => {
                   >
                     <Image
                       source={
-                        book.image_url
-                          ? { uri: book.image_url }
-                          : require("../../assets/peshraft-library/home/tojikon.jpg")
+                        book.image_url ? { uri: book.image_url } : undefined
                       }
                       style={styles.otherBookImg}
+                      onError={(e) => {
+                        // If image fails to load, it will show nothing
+                        e.currentTarget.setNativeProps({ source: undefined });
+                      }}
                     />
-                    <Text style={styles.otherBookName}>{book.title}</Text>
+                    <Text style={styles.otherBookName} numberOfLines={1}>
+                      {book.title}
+                    </Text>
                   </Pressable>
                 ))}
               </ScrollView>
-            </View>
-          )}
+            ) : (
+              <Text style={styles.noOtherBooksText}>
+                No other books available
+              </Text>
+            )}
+          </View>
         </ScrollView>
       </View>
     </View>
@@ -340,8 +381,14 @@ const ReceivedBook = ({ route }: { route?: any }) => {
 export default ReceivedBook;
 
 const styles = StyleSheet.create({
-  receivedBookComponent: { flex: 1, backgroundColor: "#fff" },
-  receivedBookComponentBlock: { padding: 18, paddingTop: 26 },
+  receivedBookComponent: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  receivedBookComponentBlock: {
+    padding: 18,
+    paddingTop: Platform.OS === "ios" ? 26 : 20,
+  },
   headerReceivedBookComponent: {},
   sectionReceivedBookComponentScrollView: {
     marginTop: 20,
@@ -349,8 +396,15 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   sectionReceivedBookComponent: {},
-  greetingsAndNameOfUser: { color: "#636363", fontSize: 25, fontWeight: "600" },
-  imgOfBookBlock: { justifyContent: "center", alignItems: "center" },
+  greetingsAndNameOfUser: {
+    color: "#636363",
+    fontSize: 25,
+    fontWeight: "600",
+  },
+  imgOfBookBlock: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
   imgOfBook: {
     width: 200,
     height: 300,
@@ -360,10 +414,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 5,
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
   },
   blockForText: {},
-  textNumber1: { fontSize: 25, fontWeight: "500", textAlign: "center" },
+  textNumber1: {
+    fontSize: 25,
+    fontWeight: "500",
+    textAlign: "center",
+    color: "#000",
+  },
   textNumber2: {
     fontSize: 25,
     fontWeight: "400",
@@ -383,19 +442,75 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertIcon: {},
-  daysLeft: { fontSize: 20, fontWeight: "400" },
+  daysLeft: {
+    fontSize: 20,
+    fontWeight: "400",
+    flexShrink: 1,
+  },
   btnReturnTheBook: {
     backgroundColor: "#00A9FF",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
+    shadowColor: "#00A9FF",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  btnTextReturnTheBook: { color: "#fff", fontSize: 18, fontWeight: "500" },
-  otherBooksContainer: { marginTop: 10 },
-  titleOtherBooks: { fontSize: 21, fontWeight: "500" },
-  otherBooksBlockScrollView: { marginTop: 10, flexDirection: "row", gap: 10 },
+  btnTextReturnTheBook: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  otherBooksContainer: {
+    marginTop: 10,
+  },
+  titleOtherBooks: {
+    fontSize: 21,
+    fontWeight: "500",
+    color: "#000",
+  },
+  otherBooksLoadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 20,
+    paddingVertical: 20,
+  },
+  otherBooksLoadingText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  otherBooksBlockScrollView: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 10,
+    paddingBottom: 10,
+  },
   otherBooksBlock: {},
-  otherBookImgAndName: { gap: 5 },
-  otherBookImg: { width: 95, height: 145, borderRadius: 8 },
-  otherBookName: { textAlign: "center", fontSize: 15, fontWeight: "400" },
+  otherBookImgAndName: {
+    gap: 5,
+    width: 95,
+  },
+  otherBookImg: {
+    width: 95,
+    height: 145,
+    borderRadius: 8,
+    backgroundColor: "#f0f0f0",
+  },
+  otherBookName: {
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
+  noOtherBooksText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 14,
+    marginTop: 20,
+    paddingVertical: 20,
+  },
 });
