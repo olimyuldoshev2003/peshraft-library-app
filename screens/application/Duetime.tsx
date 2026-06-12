@@ -107,14 +107,14 @@ const styles = StyleSheet.create({
   },
   duetimeNotificationImg: {
     width: "100%",
-    height: 95,
+    height: 125,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
   duetimeNotificationTitleAndDescriptionBlock: { padding: 15, gap: 6 },
-  duetimeNotificationTitle: { fontSize: 25, fontWeight: "700", color: "#000" },
+  duetimeNotificationTitle: { fontSize: 22, fontWeight: "700", color: "#000" },
   duetimeNotificationDescription: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "400",
     color: "#000",
   },
