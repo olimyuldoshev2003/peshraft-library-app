@@ -80,7 +80,10 @@ export default News;
 const styles = StyleSheet.create({
   duetimeComponent: { flex: 1, backgroundColor: "#fff" },
   duetimeComponentBlock: { paddingHorizontal: 16 },
-  newsBlockScrollView: { paddingHorizontal: 7, paddingBottom: 55 },
+  newsBlockScrollView: {
+    paddingHorizontal: 7,
+    paddingBottom: 55,
+  },
   newsBlock: {},
   newsContainer: { marginTop: 15, gap: 15 },
   emptyText: {
@@ -100,13 +103,13 @@ const styles = StyleSheet.create({
   },
   newsImg: {
     width: "100%",
-    height: 95,
+    height: 125,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
   newsTitleAndDescriptionBlock: { padding: 15, gap: 6 },
-  newsTitle: { fontSize: 25, fontWeight: "700", color: "#000" },
-  newsDescription: { fontSize: 18, fontWeight: "400", color: "#000" },
+  newsTitle: { fontSize: 22, fontWeight: "700", color: "#000" },
+  newsDescription: { fontSize: 15, fontWeight: "400", color: "#000" },
   newsTime: {
     fontSize: 14,
     fontWeight: "400",
